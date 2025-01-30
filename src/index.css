@@ -1,0 +1,64 @@
+/* Import Google font */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+:root {
+
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  width: "bgwidth";
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  display: flex;
+  align-items:flex-start;
+  background-image: url('../public/assets/images/panadero-bg-3.png'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat:  no-repeat;
+  position: relative;
+  overflow: auto;
+  overflow-y: auto;
+}
+
+html::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.300); /* White with 50% opacity */
+  backdrop-filter: blur(2px);
+  z-index: 1; 
+}
+
+/**
+* Ensures that the blur effect is on the background only
+*/
+
+body > * {
+  position: relative;
+  z-index: 2; 
+}
+
+
