@@ -1,0 +1,305 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  Box,
+  Button,
+  TextField,
+  FormControl,
+  Select,
+  MenuItem,
+  Avatar,
+  Typography,
+  Chip,
+  Card,
+  CardContent,
+  CardActions,
+  // Link,
+  InputAdornment,
+  IconButton} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import {
+  Tag,
+  AccountTree,
+  Email,
+  Phone,
+  Circle,
+  PersonSearch,
+  ArrowForwardIos,
+  PersonAddAlt1Outlined,
+  PersonAddAlt1Rounded,
+  FilterList,
+} from "@mui/icons-material";
+
+const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => {
+  const theme = useTheme();
+
+  const activeCount = employees.filter(emp => emp.employmentDetails.status === "Active").length;
+  const inactiveCount = employees.filter(emp => emp.employmentDetails.status === "Inactive").length;
+
+
+  return (
+    <Box
+      sx={{ padding: theme.spacing(3), height: '100%', minHeight: '100vh' }}
+    >
+      {/* Main Panel */}
+      <Box sx={{ flexGrow: 1, marginBottom: theme.spacing(2) }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "flex-start", md: "center" },
+            flexDirection: { xs: "column", sm: "row", md: "row" },
+            position: "relative"
+          }}
+        >
+          <Box>
+            {/*Employee header + Active/Inactive count*/}
+            <Box>
+              <Typography variant="header"
+                sx={{ color: theme.palette.custom.darkGrey, paddingBottom: theme.spacing(2) }}
+              >
+                Employees
+              </Typography>
+              {/*Active/Inactive count*/}
+              <Box
+                sx={{ display: "flex", gap: theme.spacing(2), alignItems: "center", paddingTop: theme.spacing(0.5), paddingBottom: theme.spacing(2) }}
+              >
+                <Typography variant="lg1"
+                  sx={{ color: theme.palette.custom.lightGrey, display: "flex", alignItems: "center" }}
+                >
+                  <Circle
+                    sx={{ fontSize: theme.icons.icon1, color: theme.palette.custom.green, marginRight: theme.spacing(0.5) }}
+                  />
+                  Active {activeCount}
+                </Typography>
+                <Typography variant="lg1"
+                  sx={{ color: theme.palette.custom.lightGrey, display: "flex", alignItems: "center" }}
+                >
+                  <Circle
+                    sx={{ 
+                      fontSize: theme.icons.icon1, 
+                      color: theme.palette.custom.red, 
+                      marginRight: theme.spacing(0.5) }}
+                  />
+                  Inactive {inactiveCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          <Box>
+            <Button variant="contained" size="small"
+              sx={{
+                display: { xs: 'none', sm: 'inline-flex' }
+              }}>
+              <PersonAddAlt1Outlined
+              />
+              Add Employee
+            </Button>
+            <IconButton
+              sx={{
+                display: { xs: 'inline-flex', sm: 'none' },
+                position: { xs: 'absolute', sm: 'initial' },
+                right: { xs: 0, sm: 'initial' }, 
+                color: theme.palette.custom.darkBrown,
+                top: 10,
+                zIndex: 10
+              }}>
+              <PersonAddAlt1Rounded sx={{ fontSize: theme.icons.icon3}}/>
+            </IconButton>
+          </Box>
+        </Box>
+
+        {/* Filter and Search Panel */}
+        <Box
+          sx={{ display: "flex", gap: theme.spacing(3), marginBottom: theme.spacing(2) }}
+        >
+          <TextField
+            placeholder="Search Employee"
+            size="small"
+            sx={{
+              backgroundColor: theme.palette.custom.white,
+              boxShadow: theme.shadows.card,
+              borderRadius: theme.spacing(1),
+              width: { xs: "100%", sm: "100%", md: "40%"}
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PersonSearch sx={{ color: theme.palette.custom.brown }} />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end" sx={{ display: { xs: "block", sm: "block", md: "none" } }}>
+                  <FilterList sx={{ color: theme.palette.custom.brown  }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {["Status", "Role", "Branch"].map((label, index) => (
+            <FormControl
+              key={index}
+              size="small"
+              sx={{
+                width: { sm: "30%", md: "18%"},
+                boxShadow: theme.shadows.card,
+                borderRadius: theme.spacing(1),
+                display: { xs: "none", sm: "none", md: "flex" },
+                backgroundColor: theme.palette.custom.darkerGrey,
+                justifyContent: "space-between",
+                '& .MuiSvgIcon-root.MuiSelect-icon': {
+                  backgroundColor: theme.palette.custom.white,
+                  borderRadius: theme.spacing(1)
+                },
+              }}
+            >
+              <Select 
+                defaultValue={label}
+                sx={{
+                  backgroundColor: theme.palette.custom.darkerGrey,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.custom.darkerGrey,
+                  },
+                  '& .MuiSelect-icon': {
+                    backgroundColor: theme.palette.custom.white,
+                    borderRadius: theme.spacing(1),
+                  },
+                }}
+                >
+                <MenuItem value={label}>{label}</MenuItem>
+                {label === "Status" && uniqueStatus?.map((item, i) => (
+                  <MenuItem key={i} value={item}>{item}</MenuItem>
+                ))}
+                {label === "Role" && uniqueRole?.map((item, i) => (
+                  <MenuItem key={i} value={item}>{item}</MenuItem>
+                ))}
+                {label === "Branch" && uniqueBranch?.map((item, i) => (
+                  <MenuItem key={i} value={item}>{item}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ))}
+        </Box>
+
+        {/* Employee Cards */}
+        <Box sx={{ 
+          display: "flex", 
+          flexWrap: "wrap", 
+          gap: theme.spacing(2),
+          justifyContent: { xs: "center", sm: "center", md: "flex-start" },
+          margin: "auto",
+          width: "100%" }}>
+          {employees.map((employee) => (
+            <Card
+              key={employee.employeeId}
+              sx={{
+                width: 245,
+                height: 360,
+                borderRadius: theme.spacing(2),
+                position: "relative",
+                boxShadow: theme.shadows.card,
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  backgroundColor:
+                    employee.employmentDetails.status === "Active"
+                      ? theme.palette.custom.green
+                      : theme.palette.custom.red,
+                },
+              }}
+            >
+              <CardContent>
+                <Chip
+                  icon={<Circle sx={{ fontSize: theme.icons.icon1, 
+                  color: theme.palette.custom.white }} />}
+                  label={employee.employmentDetails.status}
+                  sx={{
+                    backgroundColor:
+                      employee.employmentDetails.status === "Active"
+                        ? theme.palette.custom.green
+                        : theme.palette.custom.red,
+                    color: theme.palette.custom.white,
+                    '& .MuiChip-icon': {
+                      color: theme.palette.custom.white, 
+                    } 
+                  }}
+                />
+                <Avatar
+                  src={require(`../assets/avatar/${employee.employeeId}.jpg`)}
+                  sx={{ width: 50, height: 50, margin: "auto", marginBottom: theme.spacing(1) }}
+                />
+                <Typography variant="lg1" textAlign="center"
+                  sx={{
+                    color: theme.palette.custom.darkGrey,
+                    display: "flex",
+                    flexDirection: "column"
+                  }}>
+                  {employee.personalInformation.employeeName}
+                </Typography>
+                <Typography variant="lg2" textAlign="center"
+                  sx={{
+                    color: theme.palette.custom.lightGrey,
+                    display: "flex",
+                    flexDirection: "column"
+                  }}>
+                  {employee.employmentDetails.jobTitle}
+                </Typography>
+                <Box
+                  sx={{
+                    backgroundColor: theme.palette.custom.greyBorder,
+                    padding: theme.spacing(2),
+                    borderRadius: theme.spacing(1),
+                    marginTop: theme.spacing(1),
+                  }}
+                >
+                  <Typography variant="sm2"
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
+                    <Tag
+                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    />
+                    {employee.employeeId}
+                  </Typography>
+                  <Typography variant="sm2"
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
+                    <AccountTree
+                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    />
+                    {employee.employmentDetails.department}
+                  </Typography>
+                  <Typography variant="sm2"
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
+                    <Email
+                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    />
+                    {employee.personalInformation.emailAddress}
+                  </Typography>
+                  <Typography variant="sm2"
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
+                    <Phone
+                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    />
+                    {employee.personalInformation.contactNumber}
+                  </Typography>
+                </Box>
+              </CardContent>
+              <CardActions
+                sx={{ flexDirection: "row-reverse", marginRight: theme.spacing(1) }}>
+                <Link 
+                  to={`/employee/${employee.employeeId}`}
+                  style={{ color: theme.palette.custom.darkGrey, fontFamily: "Open Sans", fontSize: "12px" }}>
+                  View Details
+                  <ArrowForwardIos sx={{ fontSize: theme.icons.icon2, marginLeft: theme.spacing(0.1) }} />
+                </Link>
+              </CardActions>
+            </Card>
+          ))}
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+export default EmployeeList;
