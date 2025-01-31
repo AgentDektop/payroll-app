@@ -24,4 +24,27 @@ const calculateAge = (dateOfBirth) => {
     return differenceInYears(today, birthDate); // Get the difference in years
   };
 
-export { formatDate, calculateAge };
+/**
+ * Check if the value is a decimal and extract string or return "N/A" as fallback.
+ * Format the number with commas and two decimal places (e.g., 2,100.00).
+ */
+const formatDecimalValue = (value) => {
+  let number;
+
+  if (value && value["$numberDecimal"]) {
+    number = parseFloat(value["$numberDecimal"]);
+  } else if (value) {
+    number = parseFloat(value);
+  }
+
+  if (isNaN(number)) {
+    return "N/A";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(number);
+};  
+
+export { formatDate, calculateAge, formatDecimalValue };
