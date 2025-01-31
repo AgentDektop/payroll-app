@@ -3,13 +3,11 @@ import { useTheme } from "@mui/material/styles";
 import {
   Box,
   Typography,
-  Divider,
   Paper,
   Avatar,
   Tabs,
   Tab,
   Chip,
-  Grid,
   Button,
   TableContainer,
   Table,
@@ -18,9 +16,24 @@ import {
   TableCell,
   TableBody
 } from "@mui/material";
-import { formatDate, calculateAge } from "../../shared/utils/dateUtils";
-import { ArrowBack, Badge, HistoryEdu, MoreVert, Paid, PsychologyAlt, Assignment, CalendarMonth, NoteAlt, Task, GridView, Circle } from "@mui/icons-material";
+import { formatDate, calculateAge, formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
+import { ArrowBack, Circle } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import separatorIcon from "../../shared/assets/icon/vertical-line-separator.png";
+import personalInfoSelectedIcon from "../../shared/assets/icon/personal-info-selected-icon.png";
+import personalInfoIcon from "../../shared/assets/icon/personal-info-icon.png";
+import compensationIcon from "../../shared/assets/icon/compensation-details-icon.png";
+import compensationSelectedIcon from "../../shared/assets/icon/compensation-details-selected-icon.png";
+import employmentDetailsIcon from "../../shared/assets/icon/employee-details-icon.png";
+import employmentDetailsSelectedIcon from "../../shared/assets/icon/employee-details-selected-icon.png";
+import historyIcon from "../../shared/assets/icon/history-icon.png";
+import historySelectedIcon from "../../shared/assets/icon/history-selected-icon.png";
+import dateIcon from "../../shared/assets/icon/date-icon.png";
+import typeIcon from "../../shared/assets/icon/type-icon.png";
+import fieldNameIcon from "../../shared/assets/icon/field-name-icon.png";
+import prevValueIcon from "../../shared/assets/icon/prev-value-icon.png";
+import updatedValueIcon from "../../shared/assets/icon/updated-value-icon.png";
+import editIcon from "../../shared/assets/icon/edit-icon.png";
 
 
 const EmployeePersonalInfo = ({ employee }) => {
@@ -31,19 +44,6 @@ const EmployeePersonalInfo = ({ employee }) => {
   const personalInfo = employee.personalInformation;
   const employmentDetails = employee.employmentDetails;
   const compensationDetails = employee.compensationDetails;
-
-
-/**
- * Check if the value is a decimal and extract string or returns "N/A" as fallback
- */
-  const formatDecimalValue = (value) => {
-
-    if (value && value["$numberDecimal"]) {
-      return value["$numberDecimal"].toString() || "N/A";
-    }
-
-    return value ? value.toString() : "N/A";
-  };
 
 /**
  * Handle tab change
@@ -127,14 +127,20 @@ const EmployeePersonalInfo = ({ employee }) => {
               }}
             />
           </Box>
-          <MoreVert sx={{ marginRight: 1, marginLeft: 1, height: 100, color: theme.palette.custom.lightGrey }} />
-          <Box>
+          <img
+            src={separatorIcon}
+            alt="Separator"
+            style={{ height: 40, width: "auto", paddingRight: 30, paddingLeft: 30 }}
+          />
+          <Box sx={{ display: "flex", flexDirection: "column"}}>
             <Typography
-              variant="sm2"
-              sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+              variant="sm3"
+              sx={{ color: theme.palette.custom.lightGrey, marginBottom: 1 }}>
               Employee ID:
             </Typography>
-            <Typography>
+            <Typography 
+              variant="md1"
+              sx={{ color: theme.palette.custom.darkGrey }}>
               {employee.employeeId || "N/A"}
             </Typography>
           </Box>
@@ -153,12 +159,12 @@ const EmployeePersonalInfo = ({ employee }) => {
             marginBottom: 0,
             paddingBottom: 0,
             '& .MuiTab-root': {
-              color: theme.palette.custom.darkBrown,
+              color: theme.palette.custom.brown, // Default color
               '&:hover': {
-                color: theme.palette.custom.darkBrown
+                color: theme.palette.custom.darkBrown, // Hover color
               },
               '&.Mui-selected': {
-                color: theme.palette.custom.darkBrown,
+                color: theme.palette.custom.darkBrown, // Active tab color
               },
             },
             '& .MuiTabs-indicator': {
@@ -168,7 +174,13 @@ const EmployeePersonalInfo = ({ employee }) => {
         >
           <Tab
             label="Personal Information"
-            icon={<PsychologyAlt sx={{ color: theme.palette.custom.darkBrown, display: "flex" }} />}
+            icon={
+              <img
+                src={activeTab === 0 ? personalInfoSelectedIcon : personalInfoIcon}
+                alt="Personal Information"
+                style={{ width: 24, height: 24 }}
+              />
+            }
             iconPosition="start"
             sx={{
               paddingLeft: 1,
@@ -176,21 +188,18 @@ const EmployeePersonalInfo = ({ employee }) => {
               width: "25%",
               display: 'flex',
               justifyContent: 'center',
+              fontSize: 15,
             }}
           />
-          <Tab label="Employee Details"
-            icon={<Badge sx={{ color: theme.palette.custom.darkBrown, display: "flex" }} />}
-            iconPosition="start"
-            sx={{
-              paddingLeft: 1,
-              paddingRight: 1,
-              width: "25%",
-              display: 'flex',
-              justifyContent: 'cneter',
-            }}
-          />
-          <Tab label="Compensation Details"
-            icon={<Paid sx={{ color: theme.palette.custom.darkBrown, display: "flex" }} />}
+          <Tab
+            label="Employee Details"
+            icon={
+              <img
+                src={activeTab === 1 ? employmentDetailsSelectedIcon : employmentDetailsIcon}
+                alt="Employment Details"
+                style={{ width: 24, height: 24 }}
+              />
+            }
             iconPosition="start"
             sx={{
               paddingLeft: 1,
@@ -198,10 +207,37 @@ const EmployeePersonalInfo = ({ employee }) => {
               width: "25%",
               display: 'flex',
               justifyContent: 'center',
+              fontSize: 15,
             }}
           />
-          <Tab label="History"
-            icon={<HistoryEdu sx={{ color: theme.palette.custom.darkBrown, display: "flex" }} />}
+          <Tab
+            label="Compensation Details"
+            icon={
+              <img
+                src={activeTab === 2 ? compensationSelectedIcon : compensationIcon}
+                alt="Compensation Details"
+                style={{ width: 24, height: 24 }}
+              />
+            }
+            iconPosition="start"
+            sx={{
+              paddingLeft: 1,
+              paddingRight: 1,
+              width: "25%",
+              display: 'flex',
+              justifyContent: 'center',
+              fontSize: 15,
+            }}
+          />
+          <Tab
+            label="History"
+            icon={
+              <img
+                src={activeTab === 3 ? historySelectedIcon : historyIcon}
+                alt="History"
+                style={{ width: 20, height: 20 }}
+              />
+            }
             iconPosition="start"
             sx={{
               paddingLeft: 1,
@@ -212,6 +248,7 @@ const EmployeePersonalInfo = ({ employee }) => {
             }}
           />
         </Tabs>
+
       </Box>
 
       {/* Content Section */}
@@ -219,453 +256,358 @@ const EmployeePersonalInfo = ({ employee }) => {
         sx={{
           width: "90%",
           maxWidth: 1260,
-          p: 3,
           bgcolor: "#FAFBFB",
           borderRadius: 2,
           border: "1px solid #BDBDBD",
           boxShadow: "1px 1px 10px rgba(175, 136, 98, 0.25)",
           padding: 0,
-          margin: 0
+          margin: 2,
         }}
-        elevation={1}
+        elevation={0}
       >
         {activeTab === 0 && (
-          <Box>
-            {/* Personal Information in Two Columns */}
-            <Grid container spacing={3} sx={{ padding: 3}}>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Full Name
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {personalInfo.employeeName || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Gender
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {personalInfo.gender || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+          <Box sx={{ padding: 3 }}>
+            <Table>
+              <TableBody>
+              {/* Edit Button */}
+              <TableRow>
+              <TableCell colSpan={2} sx={{ borderBottom: "none", paddingBottom: 0, marginBottom:0}}>
+                    <Box sx={{display: "flex", gap:1, justifyContent: "right"}}>
+                      <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px:2 }}>
+                        <img
+                            src={editIcon}
+                            alt="Edit"
+                            style={{height: 20, width: 20}}
+                          />
+                          <Typography variant="sm3" sx={{color: theme.palette.custom.darkBrown}}>
+                            Edit
+                          </Typography>
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>              
+                {/* Full Name & Gender */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Full Name
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {personalInfo.employeeName || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Gender
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {personalInfo.gender || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Date of Birth
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDate(personalInfo.dateOfBirth, 'dd/MM/yyyy')}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Age
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {calculateAge(personalInfo.dateOfBirth)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Date of Birth & Age */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Date of Birth
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {formatDate(personalInfo.dateOfBirth, 'MMMM dd, yyyy')}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Age
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {calculateAge(personalInfo.dateOfBirth)}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Contact Number
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {personalInfo.contactNumber || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Contact Number & Email Address */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Contact Number
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {personalInfo.contactNumber || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Email Address
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {personalInfo.emailAddress || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Email Address
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {personalInfo.emailAddress || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-
-              {/* Full-width row for Address */}
-              <Grid item xs={12}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Address
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {personalInfo.address || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-            </Grid>
+                {/* Full-width row for Address */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell colSpan={2}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Address
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {personalInfo.address || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </Box>
         )}
+
         {activeTab === 1 && (
-          <Box>
-            {/* Employment Details */}
-            <Grid container spacing={3} sx={{ padding: 3}}>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Status
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {employmentDetails.status || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Job Title
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {employmentDetails.jobTitle || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+          <Box sx={{ padding: 3 }}>
+            <Table>
+              <TableBody>
+              {/* Edit Button */}
+              <TableRow>
+              <TableCell colSpan={2} sx={{ borderBottom: "none", paddingBottom: 0, marginBottom:0}}>
+                    <Box sx={{display: "flex", gap:1, justifyContent: "right"}}>
+                      <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px:2 }}>
+                        <img
+                            src={editIcon}
+                            alt="Edit"
+                            style={{height: 20, width: 20}}
+                          />
+                          <Typography variant="sm3" sx={{color: theme.palette.custom.darkBrown}}>
+                            Edit
+                          </Typography>
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>              
+                {/* Job Status & Job Title */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Status
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {employmentDetails.status || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Job Title
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {employmentDetails.jobTitle || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Department
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {employmentDetails.department || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Branch
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {employmentDetails.branch || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Department & Branch */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Department
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {employmentDetails.department || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Branch
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {employmentDetails.branch || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Date of Hire
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDate(employmentDetails.dateOfHire, 'dd/MM/yyyy')}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Date of Hire & Emirates ID */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Date of Hire
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {formatDate(employmentDetails.dateOfHire, "MMMM dd, yyyy") || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Emirates ID Number
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {employmentDetails.emiratesIdNumber || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Emirates ID Number
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {employmentDetails.emiratesIdNumber || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Visa Number & Date of Visa Renewal */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Visa Number
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {employmentDetails.visaNumber || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Date of Visa Renewal
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {formatDate(employmentDetails.dateOfVisaRenewal, 'MMMM dd, yyyy') || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Visa Number
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {employmentDetails.visaNumber || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Date of Visa Renewal
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDate(employmentDetails.dateOfVisaRenewal, 'dd/MM/yyyy')}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Passport Number
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {employmentDetails.passportNumber || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Date of Passport Expiry
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDate(employmentDetails.dateOfPassportExpiry, 'dd/MM/yyyy')}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-            </Grid>
+                {/* Passport Number & Date of Passport Expiry */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Passport Number
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {employmentDetails.passportNumber || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Date of Passport Expiry
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {formatDate(employmentDetails.dateOfPassportExpiry, 'MMMM dd, yyyy') || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>                
+              </TableBody>
+            </Table>            
           </Box>
         )}
         {activeTab === 2 && (
-          <Box>
-            {/* Compensation Details */}
-            <Grid container spacing={3} sx={{ padding: 3}}>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Basic Salary
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.basicSalary)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Accomodation Allowance
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.accommodationAllowance)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+          <Box sx={{ padding: 3 }}>
+            <Table>
+              <TableBody>
+              {/* Edit Button */}
+              <TableRow>
+              <TableCell colSpan={2} sx={{ borderBottom: "none", paddingBottom: 0, marginBottom:0}}>
+                    <Box sx={{display: "flex", gap:1, justifyContent: "right"}}>
+                      <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px:2 }}>
+                        <img
+                            src={editIcon}
+                            alt="Edit"
+                            style={{height: 20, width: 20}}
+                          />
+                          <Typography variant="sm3" sx={{color: theme.palette.custom.darkBrown}}>
+                            Edit
+                          </Typography>
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>              
+                {/* Basic Salary & Accommodation Allowance */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Basic Salary
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.basicSalary)} AED`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Accomodation Allowance
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.accommodationAllowance)} AED`}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Transportation Allowance
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.transportationAllowance)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Food Allowance
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.foodAllowance)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Transportation Allowance & Food Allowance */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Transportation Allowance
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.transportationAllowance)} AED`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Food Allowance
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.foodAllowance)} AED`}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Communication Allowance
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.communicationAllowance)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Communication Allowance & General Allowance */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Communication Allowance
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.communicationAllowance)} AED`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      General Allowance
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.generalAllowance)} AED`}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  General Allowance
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.generalAllowance)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
+                {/* Hourly Overtime Rate & Hourly Cancelled Day Off Rate */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Hourly Overtime Rate
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.hourlyOvertimeRate)} AED`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Hourly Cancelled Day Off Rate
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.hourlyCancelledDayOffRate)} AED`}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
 
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Hourly Overtime Rate
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.hourlyOvertimeRate)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Hourly Cancelled Day Off Rate
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.hourlyCancelledDayOffRate)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Hourly Holiday Rate
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {formatDecimalValue(compensationDetails.hourlyHolidayRate)}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}
-                >
-                  Annual Paid Time Off
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}
-                >
-                  {`${compensationDetails.annualPaidTimeOff} days` || "N/A"}
-                </Typography>
-                <Divider sx={{ mt: 1, borderColor: theme.palette.custom.greyBorder }} />
-              </Grid>
-            </Grid>
+                {/* Hourly Holiday Rate & Annual Paid Time Off */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Hourly Holiday Rate
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${formatDecimalValue(compensationDetails.hourlyHolidayRate)} AED`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: "50%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Annual Paid Time Off
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                      {`${compensationDetails.annualPaidTimeOff} Days` || "N/A"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>                
+              </TableBody>
+            </Table>            
           </Box>
         )}
         {activeTab === 3 && (
@@ -675,29 +617,64 @@ const EmployeePersonalInfo = ({ employee }) => {
               <Table sx={{ width: "100%", tableLayout: "fixed" }}>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: theme.palette.custom.greyBorder }}>
-                    <TableCell>
+                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <CalendarMonth fontSize="small" /> Date
+                        <img
+                          src={dateIcon}
+                          alt="Date"
+                          style={{ width: 24, height: 24 }}
+                        />
+                        <Typography variant="md3">
+                          Date
+                        </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <GridView fontSize="small" /> Type
+                      <img
+                          src={typeIcon}
+                          alt="Type"
+                          style={{ width: 24, height: 24 }}
+                        />
+                        <Typography variant="md3">
+                          Type
+                        </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Assignment fontSize="small" /> Field Name
+                      <img
+                          src={fieldNameIcon}
+                          alt="Field Name"
+                          style={{ width: 24, height: 24 }}
+                        />
+                        <Typography variant="md3">
+                          Field Name
+                        </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <NoteAlt fontSize="small" /> Previous Value
+                      <img
+                          src={prevValueIcon}
+                          alt="Previous Value"
+                          style={{ width: 24, height: 24 }}
+                        />
+                        <Typography variant="md3">
+                          Previous Value
+                        </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Task fontSize="small" /> Updated Value
+                      <img
+                          src={updatedValueIcon}
+                          alt="Updated Value"
+                          style={{ width: 24, height: 24 }}
+                        />
+                        <Typography variant="md3">
+                          Updated Value
+                        </Typography>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -705,11 +682,11 @@ const EmployeePersonalInfo = ({ employee }) => {
                 <TableBody>
                   {employee.history.map((row, index) => (
                     <TableRow key={index}>
-                      <TableCell>{formatDate(row.date, 'dd/MM/yyyy')}</TableCell>
-                      <TableCell>{row.type}</TableCell>
-                      <TableCell>{row.fieldName}</TableCell>
-                      <TableCell>{row.previousValue}</TableCell>
-                      <TableCell>{row.updatedValue}</TableCell>
+                      <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>{formatDate(row.date, 'dd/MM/yyyy')}</TableCell>
+                      <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>{row.type}</TableCell>
+                      <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>{row.fieldName}</TableCell>
+                      <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>{row.previousValue}</TableCell>
+                      <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>{row.updatedValue}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

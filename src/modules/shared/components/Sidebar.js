@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { Drawer, Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { People, PeopleAltOutlined, Apps, AppsOutageOutlined, ArrowForward, HorizontalRule, Menu } from '@mui/icons-material';
+import { Menu } from '@mui/icons-material';
 import paaderoIcon from "../assets/icon/panadero-icon.png";
 import employeeIcon from "../assets/icon/employee-icon.png";
 import employeeSelectedIcon from "../assets/icon/employee-selected-icon.png";
@@ -11,6 +11,10 @@ import timeAttendanceIcon from "../assets/icon/time-attendance-icon.png";
 import timeAttendanceSelectedIcon from "../assets/icon/time-attendance-selected-icon.png";
 import payRunIcon from "../assets/icon/pay-run-icon.png";
 import payRunSelectedIcon from "../assets/icon/pay-run-selected-icon.png";
+import appsIcon from "../assets/icon/apps-icon.png";
+import profileIcon from "../assets/icon/account-circle-icon.png";
+import exitToApp from "../assets/icon/exit-to-app-icon.png";
+import separatorIcon from "../assets/icon/horizontal-line-separator-icon.png"
 
 const Sidebar = () => {
   const location = useLocation();
@@ -111,23 +115,17 @@ const Sidebar = () => {
 
   {/* Main Menu Icons */}
   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom:2 }}>
-    <HorizontalRule sx={{ fontWeight: '400px', color: '#693714', fontSize: "24px" }} />
-    <IconButton sx={{ mb: 2 }}>
-      {location.pathname === '/Home' ? (
-        <AppsOutageOutlined sx={{ color: '#693714', fontSize: "24px" }} />
-      ) : (
-        <Apps sx={{ color: '#693714', fontSize: "24px" }} />
-      )}
+    <IconButton sx={{ mb: 2,  }} disableRipple>
+      <img src={separatorIcon} alt="Separator" style={{ width: 55}} />
     </IconButton>
     <IconButton sx={{ mb: 2 }}>
-      {location.pathname === '/Profile' ? (
-        <PeopleAltOutlined fontSize="large" sx={{ color: '#693714', fontSize: "24px" }} />
-      ) : (
-        <People sx={{ color: '#693714', fontSize: "24px" }} />
-      )}
+      <img src={appsIcon} alt="Apps" style={{ width: 24, height: 24 }} />
+    </IconButton>
+    <IconButton sx={{ mb: 2 }}>
+      <img src={profileIcon} alt="Profile" style={{ width: 24, height: 24 }} />
     </IconButton>
     <IconButton>
-      <ArrowForward sx={{ color: '#693714', fontSize: "24px" }} />
+      <img src={exitToApp} alt="Logout" style={{ width: 24, height: 24 }} />
     </IconButton>
   </Box>
 </Box>

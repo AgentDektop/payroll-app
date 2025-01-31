@@ -13,28 +13,40 @@ import {
   Card,
   CardContent,
   CardActions,
-  // Link,
+  ListItemText,
   InputAdornment,
-  IconButton} from "@mui/material";
+  IconButton
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
-  Tag,
-  AccountTree,
-  Email,
-  Phone,
   Circle,
-  PersonSearch,
   ArrowForwardIos,
-  PersonAddAlt1Outlined,
   PersonAddAlt1Rounded,
   FilterList,
 } from "@mui/icons-material";
+
+import employeeSearchIcon from "../../shared/assets/icon/search-employee-icon.png";
+import statusIcon from "../../shared/assets/icon/status-icon.png";
+import roleIcon from "../../shared/assets/icon/role-icon.png";
+import branchIcon from "../../shared/assets/icon/branch-icon.png";
+import addEmployeeIcon from "../../shared/assets/icon/add-employee-icon.png";
+import empNumIcon from "../../shared/assets/icon/emp-id-icon.png";
+import deptIcon from "../../shared/assets/icon/department-icon.png";
+import locIcon from "../../shared/assets/icon/location-icon.png";
+import emailIcon from "../../shared/assets/icon/email-icon.png";
+import phoneIcon from "../../shared/assets/icon/phone-icon.png";
 
 const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => {
   const theme = useTheme();
 
   const activeCount = employees.filter(emp => emp.employmentDetails.status === "Active").length;
   const inactiveCount = employees.filter(emp => emp.employmentDetails.status === "Inactive").length;
+
+  const icons = {
+    Status: statusIcon,
+    Role: roleIcon,
+    Branch: branchIcon,
+  };
 
 
   return (
@@ -76,10 +88,11 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
                   sx={{ color: theme.palette.custom.lightGrey, display: "flex", alignItems: "center" }}
                 >
                   <Circle
-                    sx={{ 
-                      fontSize: theme.icons.icon1, 
-                      color: theme.palette.custom.red, 
-                      marginRight: theme.spacing(0.5) }}
+                    sx={{
+                      fontSize: theme.icons.icon1,
+                      color: theme.palette.custom.red,
+                      marginRight: theme.spacing(0.5)
+                    }}
                   />
                   Inactive {inactiveCount}
                 </Typography>
@@ -91,7 +104,10 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
               sx={{
                 display: { xs: 'none', sm: 'inline-flex' }
               }}>
-              <PersonAddAlt1Outlined
+              <img
+                src={addEmployeeIcon}
+                alt="Add Employee"
+                style={{ width: 20, height: 20 }}
               />
               Add Employee
             </Button>
@@ -99,12 +115,12 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
               sx={{
                 display: { xs: 'inline-flex', sm: 'none' },
                 position: { xs: 'absolute', sm: 'initial' },
-                right: { xs: 0, sm: 'initial' }, 
+                right: { xs: 0, sm: 'initial' },
                 color: theme.palette.custom.darkBrown,
                 top: 10,
                 zIndex: 10
               }}>
-              <PersonAddAlt1Rounded sx={{ fontSize: theme.icons.icon3}}/>
+              <PersonAddAlt1Rounded sx={{ fontSize: theme.icons.icon3 }} />
             </IconButton>
           </Box>
         </Box>
@@ -120,17 +136,21 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
               backgroundColor: theme.palette.custom.white,
               boxShadow: theme.shadows.card,
               borderRadius: theme.spacing(1),
-              width: { xs: "100%", sm: "100%", md: "40%"}
+              width: { xs: "100%", sm: "100%", md: "40%" }
             }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <PersonSearch sx={{ color: theme.palette.custom.brown }} />
+                  <img
+                    src={employeeSearchIcon}
+                    alt="Search"
+                    style={{ width: 24, height: 24 }}
+                  />
                 </InputAdornment>
               ),
               endAdornment: (
                 <InputAdornment position="end" sx={{ display: { xs: "block", sm: "block", md: "none" } }}>
-                  <FilterList sx={{ color: theme.palette.custom.brown  }} />
+                  <FilterList sx={{ color: theme.palette.custom.brown }} />
                 </InputAdornment>
               ),
             }}
@@ -140,54 +160,75 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
               key={index}
               size="small"
               sx={{
-                width: { sm: "30%", md: "18%"},
+                width: { sm: "30%", md: "16%" },
                 boxShadow: theme.shadows.card,
                 borderRadius: theme.spacing(1),
                 display: { xs: "none", sm: "none", md: "flex" },
                 backgroundColor: theme.palette.custom.darkerGrey,
                 justifyContent: "space-between",
-                '& .MuiSvgIcon-root.MuiSelect-icon': {
+                "& .MuiSvgIcon-root.MuiSelect-icon": {
                   backgroundColor: theme.palette.custom.white,
-                  borderRadius: theme.spacing(1)
+                  borderRadius: theme.spacing(1),
                 },
               }}
             >
-              <Select 
+              <Select
                 defaultValue={label}
+                renderValue={(selected) => (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {icons[selected] && ( 
+                      <img
+                        src={icons[selected]}
+                        alt={selected}
+                        style={{ width: 20, height: 20 }}
+                      />
+                    )}
+                    <span>{selected}</span>
+                  </div>
+                )}
                 sx={{
                   backgroundColor: theme.palette.custom.darkerGrey,
-                  '& .MuiOutlinedInput-notchedOutline': {
+                  "& .MuiOutlinedInput-notchedOutline": {
                     borderColor: theme.palette.custom.darkerGrey,
                   },
-                  '& .MuiSelect-icon': {
+                  "& .MuiSelect-icon": {
                     backgroundColor: theme.palette.custom.white,
                     borderRadius: theme.spacing(1),
                   },
                 }}
-                >
-                <MenuItem value={label}>{label}</MenuItem>
-                {label === "Status" && uniqueStatus?.map((item, i) => (
-                  <MenuItem key={i} value={item}>{item}</MenuItem>
-                ))}
-                {label === "Role" && uniqueRole?.map((item, i) => (
-                  <MenuItem key={i} value={item}>{item}</MenuItem>
-                ))}
-                {label === "Branch" && uniqueBranch?.map((item, i) => (
-                  <MenuItem key={i} value={item}>{item}</MenuItem>
-                ))}
+              >
+
+                <MenuItem value={label}>
+                  <ListItemText primary={label} />
+                </MenuItem>
+
+                {label === "Status" &&
+                  uniqueStatus?.map((item, i) => (
+                    <MenuItem key={i} value={item}>{item}</MenuItem>
+                  ))}
+                {label === "Role" &&
+                  uniqueRole?.map((item, i) => (
+                    <MenuItem key={i} value={item}>{item}</MenuItem>
+                  ))}
+                {label === "Branch" &&
+                  uniqueBranch?.map((item, i) => (
+                    <MenuItem key={i} value={item}>{item}</MenuItem>
+                  ))}
               </Select>
             </FormControl>
           ))}
+
         </Box>
 
         {/* Employee Cards */}
-        <Box sx={{ 
-          display: "flex", 
-          flexWrap: "wrap", 
+        <Box sx={{
+          display: "flex",
+          flexWrap: "wrap",
           gap: theme.spacing(2),
           justifyContent: { xs: "center", sm: "center", md: "flex-start" },
           margin: "auto",
-          width: "100%" }}>
+          width: "100%"
+        }}>
           {employees.map((employee) => (
             <Card
               key={employee.employeeId}
@@ -213,8 +254,10 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
             >
               <CardContent>
                 <Chip
-                  icon={<Circle sx={{ fontSize: theme.icons.icon1, 
-                  color: theme.palette.custom.white }} />}
+                  icon={<Circle sx={{
+                    fontSize: theme.icons.icon1,
+                    color: theme.palette.custom.white
+                  }} />}
                   label={employee.employmentDetails.status}
                   sx={{
                     backgroundColor:
@@ -223,8 +266,8 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
                         : theme.palette.custom.red,
                     color: theme.palette.custom.white,
                     '& .MuiChip-icon': {
-                      color: theme.palette.custom.white, 
-                    } 
+                      color: theme.palette.custom.white,
+                    }
                   }}
                 />
                 <Avatar
@@ -250,50 +293,74 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
                 <Box
                   sx={{
                     backgroundColor: theme.palette.custom.greyBorder,
-                    padding: theme.spacing(2),
+                    py: theme.spacing(1.3),
+                    px: theme.spacing(2),
                     borderRadius: theme.spacing(1),
                     marginTop: theme.spacing(1),
                   }}
                 >
                   <Typography variant="sm2"
-                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
-                    <Tag
-                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey, paddingBottom: 0.5 }}>
+                    <img
+                      src={empNumIcon}
+                      alt="Employee ID"
+                      style={{ width: 20, height: 20, paddingRight: 2, marginRight: 3 }}
                     />
                     {employee.employeeId}
                   </Typography>
                   <Typography variant="sm2"
-                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
-                    <AccountTree
-                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey, paddingBottom: 0.5 }}>
+                    <img
+                      src={deptIcon}
+                      alt="Department"
+                      style={{ width: 20, height: 20, paddingRight: 2, marginRight: 3 }}
                     />
                     {employee.employmentDetails.department}
                   </Typography>
                   <Typography variant="sm2"
-                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
-                    <Email
-                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey, paddingBottom: 0.5 }}>
+                    <img
+                      src={locIcon}
+                      alt="Branch"
+                      style={{ width: 20, height: 20, paddingRight: 2, marginRight: 3 }}
+                    />
+                    {employee.employmentDetails.branch}
+                  </Typography>                  
+                  <Typography variant="sm2"
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey, paddingBottom: 0.5 }}>
+                    <img
+                      src={emailIcon}
+                      alt="Email Address"
+                      style={{ width: 20, height: 20, paddingRight: 2, marginRight: 3 }}
                     />
                     {employee.personalInformation.emailAddress}
                   </Typography>
                   <Typography variant="sm2"
-                    sx={{ display: "flex", color: theme.palette.custom.darkGrey }}>
-                    <Phone
-                      sx={{ fontSize: theme.icons.icon1, marginRight: theme.spacing(1), color: theme.palette.custom.darkGrey }}
+                    sx={{ display: "flex", color: theme.palette.custom.darkGrey, paddingBottom: 0.5 }}>
+                    <img
+                      src={phoneIcon}
+                      alt="Contact Number"
+                      style={{ width: 20, height: 20, paddingRight: 2, marginRight: 3 }}
                     />
                     {employee.personalInformation.contactNumber}
                   </Typography>
                 </Box>
               </CardContent>
               <CardActions
-                sx={{ flexDirection: "row-reverse", marginRight: theme.spacing(1) }}>
-                <Link 
-                  to={`/employee/${employee.employeeId}`}
-                  style={{ color: theme.palette.custom.darkGrey, fontFamily: "Open Sans", fontSize: "12px" }}>
-                  View Details
-                  <ArrowForwardIos sx={{ fontSize: theme.icons.icon2, marginLeft: theme.spacing(0.1) }} />
-                </Link>
-              </CardActions>
+                  sx={{
+                    flexDirection: "row-reverse",
+                    marginRight: theme.spacing(1),
+                    paddingBottom: theme.spacing(3)
+                  }}
+                >
+                  <Link
+                    to={`/employee/${employee.employeeId}`}
+                    style={{ color: theme.palette.custom.darkGrey, fontFamily: "Open Sans", fontSize: "12px" }}
+                  >
+                    View Details
+                    <ArrowForwardIos sx={{ fontSize: theme.icons.icon2, marginLeft: theme.spacing(0.1) }} />
+                  </Link>
+                </CardActions>
             </Card>
           ))}
         </Box>
