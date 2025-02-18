@@ -12,7 +12,7 @@ import useAddEmployee from "../hooks/useAddEmployee.js";
 import useAllEmployeeData from "../hooks/useAllEmployeeData.js";
 import SearchableDropdown from "./SearchableDropdown.js";
 import { calculateAge } from "../../shared/utils/dateAndNumberUtils";
-import { parse, isValid, setHours, setMinutes, setSeconds, format } from "date-fns";
+import { format } from "date-fns";
 
 import "react-datepicker/dist/react-datepicker.css";
 import calendarIcon from "../../shared/assets/icon/calendar-icon.png";
@@ -186,7 +186,6 @@ const AddEmployeeModal = ({ open, onClose, onSuccess }) => {
     console.log("Form data updated:", formData);
   }, [formData]);
 
-
   /**
    * Handles dropdown selections for role, branch, and department.
    */
@@ -278,11 +277,6 @@ const AddEmployeeModal = ({ open, onClose, onSuccess }) => {
       };
 
       const response = await handleAddEmployee(formattedData);
-
-      console.log(`handleSubmit value of formData ${formData}`)
-      console.log(`handleSubmit response: ${JSON.stringify(response)}`);
-      console.log(`handleSubmit status`)
-
 
       if (response && response.message === "Employee added successfully.") {
         alert("Employee created successfully!");
