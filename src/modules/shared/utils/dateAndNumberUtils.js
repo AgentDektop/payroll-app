@@ -1,50 +1,43 @@
-import { format, startOfDay, differenceInYears, parseISO } from 'date-fns';
+import { isValid, parse , differenceInYears } from 'date-fns';
+import { formatInTimeZone } from "date-fns-tz";
 
-/**
- * Strips the time from a date object and formats it into a specific format.
- * 
- * @param {Date | string} date - The input date object or date string.
- * @param {string} dateFormat - The format for the date (default 'dd/MM/yyyy').
- * @param {string} timeZone - The time zone to format the date in (default 'Asia/Dubai').
- * @returns {string} - The formatted date.
- */
-const formatDate = (date, dateFormat = 'dd/MM/yyyy', timeZone = 'Asia/Dubai') => {
-    if (!date) return 'N/A';
-    
-    // Strip the time and get the start of the day
-    const strippedDate = startOfDay(new Date(date)); // Set the time to 00:00:00
-    
-    // Format the date into the specified format
-    return format(strippedDate, dateFormat);
+const convertDate = (dateString, formatString, timeZone = "Asia/Dubai") => {
+  if (!dateString) return "Invalid Date"; 
+  
+  const parsedDate = parse(dateString, "dd-MM-yyyy", new Date());
+  console.log("parsedDate", parsedDate)
+
+  if (!isValid(parsedDate)) return "Invalid Date";
+  const escapedFormatString = formatString ? formatString.replace(/([^\w\s])/g, "'$1'") : 'MMMM dd, yyyy';
+
+  return formatInTimeZone(parsedDate, timeZone, escapedFormatString );
 };
 
-const calculateAge = (dateOfBirth) => {
-    const birthDate = parseISO(dateOfBirth); // Parse the input date if it's a string
-    const today = new Date();
-    return differenceInYears(today, birthDate); // Get the difference in years
-  };
+const calculateAge = (dateInput) => {
+  if (!(dateInput instanceof Date) || !isValid(dateInput)) {
+    console.error("Invalid date in calculateAge:", dateInput);
+    return null;
+  }
+
+  return differenceInYears(new Date(), dateInput);
+};
+
 
 /**
- * Check if the value is a decimal and extract string or return "N/A" as fallback.
- * Format the number with commas and two decimal places (e.g., 2,100.00).
+ * Formats a number with commas as thousand separators and ensures two decimal places.
+ * Example: 2100 -> "2,100.00"
  */
+
 const formatDecimalValue = (value) => {
-  let number;
+  if (!value) return "N/A";
 
-  if (value && value["$numberDecimal"]) {
-    number = parseFloat(value["$numberDecimal"]);
-  } else if (value) {
-    number = parseFloat(value);
-  }
-
-  if (isNaN(number)) {
-    return "N/A";
-  }
+  const number = value["$numberDecimal"] ?? value;
 
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(number);
-};  
+};
+  
 
-export { formatDate, calculateAge, formatDecimalValue };
+export { convertDate, calculateAge, formatDecimalValue };

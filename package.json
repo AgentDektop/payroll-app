@@ -3,22 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@date-io/date-fns": "^3.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.4.0",
     "@mui/material": "^6.4.0",
+    "axios": "^1.7.9",
     "cra-template": "1.2.0",
-    "date-fns": "^4.1.0",
+    "date-fns": "^3.6.0",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^16.4.7",
     "react": "^18.3.1",
+    "react-datepicker": "^8.0.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.1.1",
     "react-scripts": "5.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "react-scripts start --no-source-maps",
+    "build": "react-scripts start --no-source-maps",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

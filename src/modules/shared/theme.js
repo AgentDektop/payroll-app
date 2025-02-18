@@ -40,7 +40,7 @@ const theme = createTheme({
     md2: { fontSize: "16px", fontWeight: 600, fontFamily: "Open Sans",  },
     md3: { fontSize: "16px", fontWeight: 400, fontFamily: "Open Sans", },
     sm1: { fontSize: "14px", fontWeight: 700, fontFamily: "Open Sans", },
-    sm2: { fontSize: "14px", fontWeight: 400, fontFamily: "Open Sans", },
+    sm2: { fontSize: "13px", fontWeight: 400, fontFamily: "Open Sans", },
     sm3: { fontSize: "12px", fontWeight: 400, fontFamily: "Open Sans", },
   },
   icons: {
