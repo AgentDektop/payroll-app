@@ -1,36 +1,49 @@
-import { useState, useEffect } from "react";
-import {fetchEmployees} from "../services/EmployeeAPI.js";
+import { useState, useEffect, useCallback } from "react";
+import { fetchEmployees } from "../services/EmployeeAPI.js";
 
 const useAllEmployeeData = () => {
   const [employees, setEmployees] = useState([]);
   const [uniqueStatus, setUniqueStatus] = useState([]);
   const [uniqueRole, setUniqueRole] = useState([]);
   const [uniqueBranch, setUniqueBranch] = useState([]);
+  const [uniqueDepartment, setUniqueDepartment] = useState([]);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const data = await fetchEmployees();
-        setEmployees(data);
+  const fetchData = useCallback(async () => {
+    try {
+      const data = await fetchEmployees();
 
-        const status = [...new Set(data.map((emp) => emp.employmentDetails.status))];
-        setUniqueStatus(status);
+      const employeesWithAvatar = await Promise.all(
+        data.map(async (emp) => {
+          const imageUrl = `/assets/avatar/${emp.employeeId}.png`;
+          try {
+            const res = await fetch(imageUrl);
+            return {
+              ...emp,
+              avatar: res.ok ? imageUrl : "/assets/avatar/default.png",
+            };
+          } catch {
+            return { ...emp, avatar: "/assets/avatar/default.png" };
+          }
+        })
+      );
 
-        const roles = [...new Set(data.map((emp) => emp.employmentDetails.jobTitle))]
-        setUniqueRole(roles);
+      setEmployees(employeesWithAvatar);
+      setUniqueStatus([...new Set(data.map((emp) => emp.employmentDetails.status))]);
+      setUniqueRole([...new Set(data.map((emp) => emp.employmentDetails.role))]);
+      setUniqueBranch([...new Set(data.map((emp) => emp.employmentDetails.branch))]);
+      setUniqueDepartment([...new Set(data.map((emp) => emp.employmentDetails.department))]);
 
-        const branch = [...new Set(data.map((emp) => emp.employmentDetails.branch))]
-        setUniqueBranch(branch);
-
-      } catch (err) {
-        setError(err.message);
-      }
-    };
-    getData();
+    } catch (err) {
+      setError(err.message);
+    }
   }, []);
 
-  return { employees, uniqueStatus, uniqueRole, uniqueBranch, error };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { employees, uniqueStatus, uniqueRole, uniqueBranch, uniqueDepartment, error, fetchData };
 };
 
 export default useAllEmployeeData;

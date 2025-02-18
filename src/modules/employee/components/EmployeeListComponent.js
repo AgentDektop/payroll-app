@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -25,6 +25,8 @@ import {
   FilterList,
 } from "@mui/icons-material";
 
+import AddEmployeeModal from "./AddEmployeeModal";
+
 import employeeSearchIcon from "../../shared/assets/icon/search-employee-icon.png";
 import statusIcon from "../../shared/assets/icon/status-icon.png";
 import roleIcon from "../../shared/assets/icon/role-icon.png";
@@ -36,7 +38,7 @@ import locIcon from "../../shared/assets/icon/location-icon.png";
 import emailIcon from "../../shared/assets/icon/email-icon.png";
 import phoneIcon from "../../shared/assets/icon/phone-icon.png";
 
-const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => {
+const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetchData }) => {
   const theme = useTheme();
 
   const activeCount = employees.filter(emp => emp.employmentDetails.status === "Active").length;
@@ -48,11 +50,11 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
     Branch: branchIcon,
   };
 
+  const [open, setOpen] = useState(false);
+
 
   return (
-    <Box
-      sx={{ padding: theme.spacing(3), height: '100%', minHeight: '100vh' }}
-    >
+    <Box sx={{ padding: theme.spacing(3), height: '100vh', overflowY: 'auto' }}>
       {/* Main Panel */}
       <Box sx={{ flexGrow: 1, marginBottom: theme.spacing(2) }}>
         <Box
@@ -103,14 +105,26 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
             <Button variant="contained" size="small"
               sx={{
                 display: { xs: 'none', sm: 'inline-flex' }
-              }}>
+              }}
+              onClick={() => setOpen(true)}
+              >
               <img
                 src={addEmployeeIcon}
                 alt="Add Employee"
                 style={{ width: 20, height: 20 }}
+              
               />
               Add Employee
             </Button>
+            <AddEmployeeModal 
+              open={open} 
+              onClose={() => 
+              setOpen(false)} 
+              onSuccess={() => {
+                console.log("Employee successfully added!");
+                fetchData();
+              }} 
+              />
             <IconButton
               sx={{
                 display: { xs: 'inline-flex', sm: 'none' },
@@ -174,6 +188,7 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
             >
               <Select
                 defaultValue={label}
+                MenuProps={{ disablePortal: true, disableScrollLock: true}}
                 renderValue={(selected) => (
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {icons[selected] && ( 
@@ -233,7 +248,7 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
             <Card
               key={employee.employeeId}
               sx={{
-                width: 245,
+                width: 250,
                 height: 360,
                 borderRadius: theme.spacing(2),
                 position: "relative",
@@ -271,7 +286,7 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
                   }}
                 />
                 <Avatar
-                  src={require(`../assets/avatar/${employee.employeeId}.jpg`)}
+                  src={employee.avatar} 
                   sx={{ width: 50, height: 50, margin: "auto", marginBottom: theme.spacing(1) }}
                 />
                 <Typography variant="lg1" textAlign="center"
@@ -288,13 +303,13 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch }) => 
                     display: "flex",
                     flexDirection: "column"
                   }}>
-                  {employee.employmentDetails.jobTitle}
+                  {employee.employmentDetails.role}
                 </Typography>
                 <Box
                   sx={{
                     backgroundColor: theme.palette.custom.greyBorder,
                     py: theme.spacing(1.3),
-                    px: theme.spacing(2),
+                    px: theme.spacing(1.5),
                     borderRadius: theme.spacing(1),
                     marginTop: theme.spacing(1),
                   }}
