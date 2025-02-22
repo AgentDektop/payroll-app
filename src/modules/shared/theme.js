@@ -25,7 +25,34 @@ const theme = createTheme({
         fontSize: "30px",
         fontWeight: 500,
       }
-     }, 
+     },
+     header2: { 
+      fontSize: "36px", 
+      fontWeight:600, 
+      fontFamily: "Open Sans",
+      "@media (max-width:600px)": {
+        fontSize: "30px",
+        fontWeight: 500,
+      }
+     },
+     header3: { 
+      fontSize: "25px", 
+      fontWeight:600, 
+      fontFamily: "Open Sans",
+      "@media (max-width:600px)": {
+        fontSize: "30px",
+        fontWeight: 500,
+      }
+     },
+     header4: { 
+      fontSize: "20px", 
+      fontWeight:300, 
+      fontFamily: "Open Sans",
+      "@media (max-width:600px)": {
+        fontSize: "30px",
+        fontWeight: 500,
+      }
+     },
     lg1: { 
       fontSize: "1rem", 
       fontWeight: 600, 
@@ -42,6 +69,7 @@ const theme = createTheme({
     sm1: { fontSize: "14px", fontWeight: 700, fontFamily: "Open Sans", },
     sm2: { fontSize: "13px", fontWeight: 400, fontFamily: "Open Sans", },
     sm3: { fontSize: "12px", fontWeight: 400, fontFamily: "Open Sans", },
+    sm4: { fontSize: "12px", fontWeight: 700, fontFamily: "Open Sans", },
   },
   icons: {
     icon1: { fontSize: "15px"},

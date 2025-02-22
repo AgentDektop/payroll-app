@@ -105,7 +105,7 @@ const Sidebar = () => {
       )}
     </IconButton>
     <IconButton sx={{ mb: 2 }} onClick={() => navigate('/payrun')}>
-      {location.pathname === '/payrun' ? (
+      {location.pathname.startsWith('/payrun') ? (
         <img src={payRunSelectedIcon} alt="Pay Run" style={{ width: 24, height: 24 }} />
       ) : (
         <img src={payRunIcon} alt="Pay Run" style={{ width: 24, height: 24 }} />
