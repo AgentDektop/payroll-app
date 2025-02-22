@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import EmployeeListPage from "./modules/employee/pages/EmployeeListPage";
 import Sidebar from './modules/shared/components/Sidebar';
 import EmployeePersonalInfoPage from './modules/employee/pages/EmployeePersonalInfoPage';
+import PayrollListPage from './modules/payrun/pages/PayrollListPage';
+import PayRun from './modules/payrun/pages/PayrunPage';
 
 function App() {
   return (
@@ -18,7 +20,8 @@ function App() {
               <Route path="/employee/all" element={<EmployeeListPage />}/>
               <Route path="/employee/:id" element={<EmployeePersonalInfoPage />} />
               <Route path="/time-and-attendance/by-period" />
-              <Route path="/payrun" />
+              <Route path="/payrun" element={<PayrollListPage/>} />
+              <Route path="/payrun/:id" element={<PayRun/>} />
             </Route>
           </Routes>
         </div>
