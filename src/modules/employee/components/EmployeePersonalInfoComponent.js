@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { forwardRef, useEffect, useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import {
   Box,
@@ -14,12 +14,20 @@ import {
   TableHead,
   TableRow,
   TableCell,
-  TableBody
+  TableBody,
+  MenuItem,
+  FormControl,
+  Select,
+  TextField,
+  InputAdornment,
+  IconButton
 } from "@mui/material";
-import { convertDate, formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
-import { ArrowBack, Circle } from "@mui/icons-material";
+import { calculatePersonalProfileAge, formatUIDisplayDate, formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
+import { ArrowBack, Circle, Clear } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { parse, isValid } from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import useEmployeeEdit from "../hooks/useEditEmployee";
 import separatorIcon from "../../shared/assets/icon/vertical-line-separator.png";
 import personalInfoSelectedIcon from "../../shared/assets/icon/personal-info-selected-icon.png";
 import personalInfoIcon from "../../shared/assets/icon/personal-info-icon.png";
@@ -35,63 +43,117 @@ import fieldNameIcon from "../../shared/assets/icon/field-name-icon.png";
 import prevValueIcon from "../../shared/assets/icon/prev-value-icon.png";
 import updatedValueIcon from "../../shared/assets/icon/updated-value-icon.png";
 import editIcon from "../../shared/assets/icon/edit-icon.png";
+import cancelIcon from "../../shared/assets/icon/cancel-icon.png";
+import saveIcon from "../../shared/assets/icon/save-icon.png";
+import calendarIcon from "../../shared/assets/icon/calendar-icon.png"
+import { formatHistoryValue } from "../utils/employeeUtils";
+import useAllEmployeeData from "../hooks/useAllEmployeeData";
+import SearchableDropdown from "./SearchableDropdown";
 
 
-const EmployeePersonalInfo = ({ employee }) => {
+const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState(0);
+
+  const {
+    activeTab,
+    isEditing,
+    formData,
+    editedData,
+    handleTabChange,
+    handleSelect,
+    handleChange,
+    handleEdit,
+    handleSave,
+    handleCancel,
+  } = useEmployeeEdit(employee, fetchEmployeeData);
 
   const personalInfo = employee.personalInformation;
   const employmentDetails = employee.employmentDetails;
   const compensationDetails = employee.compensationDetails;
+  const UI_DATE_FORMAT = 'MMMM dd, yyyy';
 
-  const UI_DATE_FORMAT =  'MMMM dd, yyyy';
+  const { uniqueRole, setUniqueRole, uniqueBranch, setUniqueBranch, uniqueDepartment, setUniqueDepartment } = useAllEmployeeData();
+  const [roles, setRoles] = useState(uniqueRole);
+  const [branches, setBranches] = useState(uniqueBranch);
+  const [departments, setDepartments] = useState(uniqueDepartment);
 
-/**
- * Checks if a value is of Date type.
- * If it is a valid Date, returns true; otherwise, returns false.
- */
-const isDate = (value) => {
-  if (typeof value === 'string') {
-    const parsedDate = parse(value, 'dd-MM-yyyy', new Date());
-    console.log("isDate", parsedDate)
-    return isValid(parsedDate);
-  }
-  return false;
-};
+  useEffect(() => {
+    setRoles(uniqueRole);
+    setBranches(uniqueBranch);
+    setDepartments(uniqueDepartment);
+  }, [uniqueRole, uniqueBranch, uniqueDepartment]);
 
-
-/**
- * Checks if a value is a decimal number.
- * Returns true if the value contains a decimal point and is a valid number.
- */
-const isDecimal = (value) => {
-  return !isNaN(value) && value.toString().includes('.');
-};
-
-/**
- * Formats a value based on its type.
- * - If the value is a Date, formats it to "MMMM dd, yyyy".
- * - If the value is a Decimal, formats it using formatDecimalValue() and appends "AED".
- * - Otherwise, returns the value as is.
- * 
- * @param {any} value - The value to format.
- * @returns {string} - The formatted value.
- */
-const formatHistoryValue = (value) => {
-  console.log(typeof(value))
-  if (isDate(value)) return convertDate(value);
-  if (isDecimal(value)) return `${formatDecimalValue(value)} AED`; // Calls your existing formatter
-  return value; // Keep as text if neither date nor decimal
-};
-
-/**
- * Handle tab change
- */
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  const uniformFieldStyle = {
+    width: { xs: "200px", md: "350px", lg: "536px", xl: "608px" },
+    minWidth: { xs: "200px", md: "350px", lg: "536px", xl: "608px" },
+    maxWidth: { xs: "200px", md: "350px", lg: "536px", xl: "608px" },
   };
+
+
+  const CustomDateInput = forwardRef(({ value, onClick, placeholder, onClear = () => { } }, ref) => (
+    <TextField
+      variant="outlined"
+      fullWidth
+      value={value || ""}
+      onClick={onClick}
+      ref={ref}
+      placeholder={placeholder}
+      sx={{
+        ...uniformFieldStyle,
+        backgroundColor: theme.palette.custom.white,
+        borderRadius: theme.spacing(1),
+        "& .MuiOutlinedInput-root": {
+          boxShadow: "none",
+          "&:hover": {
+            backgroundColor: theme.palette.custom.white,
+          },
+          "& .MuiOutlinedInput-notchedOutline": {
+            border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+            borderWidth: "1px !important",
+            boxShadow: "none !important",
+          },
+        },
+      }}
+      InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            {value ? (
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClear();
+                }}
+                size="small"
+              >
+                <Clear fontSize="small" />
+              </IconButton>
+            ) : (
+              <img
+                src={calendarIcon}
+                alt="calendar icon"
+                width="24"
+                height="24"
+                style={{ cursor: "pointer", filter: "invert(0.5)" }}
+                onClick={onClick}
+              />
+            )}
+          </InputAdornment>
+        ),
+        style: { width: "100%" }
+      }}
+    />
+  ));
+
+  useEffect(() => {
+    console.log("formData updated:", formData);
+  }, [formData]);
 
   return (
     <Box
@@ -113,7 +175,7 @@ const formatHistoryValue = (value) => {
           alignItems: "center",
           justifyContent: "space-between",
           width: "90%",
-          maxWidth: 1260,
+          maxWidth: 1400,
           mb: 2,
         }}
       >
@@ -154,8 +216,10 @@ const formatHistoryValue = (value) => {
             </Typography>
             <Chip
               label={employee.employmentDetails.status || "Unknown"}
-              icon={<Circle sx={{ fontSize: theme.icons.icon1, 
-                color: theme.palette.custom.white }} />}
+              icon={<Circle sx={{
+                fontSize: theme.icons.icon1,
+                color: theme.palette.custom.white
+              }} />}
               size="small"
               sx={{
                 mt: 1,
@@ -163,9 +227,9 @@ const formatHistoryValue = (value) => {
                   theme.palette.custom.green : theme.palette.custom.red,
                 color: theme.palette.custom.white,
                 '& .MuiChip-icon': {
-                      color: theme.palette.custom.white,
-                      fontSize: theme.icons.icon2 
-                    }
+                  color: theme.palette.custom.white,
+                  fontSize: theme.icons.icon2
+                }
               }}
             />
           </Box>
@@ -174,13 +238,13 @@ const formatHistoryValue = (value) => {
             alt="Separator"
             style={{ height: 40, width: "auto", paddingRight: 30, paddingLeft: 30 }}
           />
-          <Box sx={{ display: "flex", flexDirection: "column"}}>
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
             <Typography
               variant="sm3"
               sx={{ color: theme.palette.custom.lightGrey, marginBottom: 1 }}>
               Employee ID:
             </Typography>
-            <Typography 
+            <Typography
               variant="md1"
               sx={{ color: theme.palette.custom.darkGrey }}>
               {employee.employeeId || "N/A"}
@@ -191,7 +255,7 @@ const formatHistoryValue = (value) => {
       </Box>
 
       {/* Tabs Section */}
-      <Box sx={{ width: "90%", maxWidth: 1260, borderBottom: 1, borderColor: theme.palette.custom.darkBrown, marginBottom: 0, paddingBottom: 0}}>
+      <Box sx={{ width: "90%", maxWidth: 1400, borderBottom: 1, borderColor: theme.palette.custom.darkBrown, marginBottom: 0, paddingBottom: 0 }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -297,7 +361,7 @@ const formatHistoryValue = (value) => {
       <Paper
         sx={{
           width: "90%",
-          maxWidth: 1260,
+          maxWidth: 1400,
           bgcolor: "#FAFBFB",
           borderRadius: 2,
           border: "1px solid #BDBDBD",
@@ -309,30 +373,57 @@ const formatHistoryValue = (value) => {
         elevation={0}
       >
         {activeTab === 0 && (
-          <Box sx={{ px: 3, paddingBottom: 3, paddingTop: 0, height: "calc(100vh - 260px)", overflow: "auto" }}>
+          <Box sx={{ px: 3, paddingBottom: 3, paddingTop: 0, height: "calc(100vh - 260px)", overflowY: "auto", overflowX: "hidden" }}>
             <Table>
               <TableHead>
                 <TableRow sx={{ padding: 3, position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#FAFBFB" }}>
                   <TableCell colSpan={2} sx={{ borderBottom: "none", paddingBottom: 0, marginBottom: 0, }}>
                     <Box sx={{ display: "flex", gap: 1, justifyContent: "right" }}>
-                      <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }}>
-                        <img
-                          src={editIcon}
-                          alt="Edit"
-                          style={{ height: 20, width: 20 }}
-                        />
-                        <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
-                          Edit
-                        </Typography>
-                      </Button>
+                      {!isEditing && (
+                        <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }} onClick={handleEdit}>
+                          <img
+                            src={editIcon}
+                            alt="Edit"
+                            style={{ height: 20, width: 20 }}
+                          />
+                          <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                            Edit
+                          </Typography>
+                        </Button>
+                      )}
+                      {isEditing && (
+                        <>
+                          <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 3 }}
+                            onClick={handleSave}>
+                            <img
+                              src={saveIcon}
+                              alt="Save"
+                              style={{ height: 20, width: 20 }}
+                            />
+                            <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                              Save
+                            </Typography>
+                          </Button>
+                          <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }} onClick={handleCancel}>
+                            <img
+                              src={cancelIcon}
+                              alt="Cancel"
+                              style={{ height: 20, width: 20 }}
+                            />
+                            <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                              Cancel
+                            </Typography>
+                          </Button>
+                        </>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>              
+              <TableBody>
                 {/* Full Name & Gender */}
                 <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Full Name
                     </Typography>
@@ -340,53 +431,187 @@ const formatHistoryValue = (value) => {
                       {personalInfo.employeeName || "N/A"}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Gender
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {personalInfo.gender || "N/A"}
-                    </Typography>
+
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {personalInfo.gender || "N/A"}
+                      </Typography>
+                    ) : (
+                      <FormControl
+                        fullWidth
+                        variant="outlined"
+                        sx={{
+                          ...uniformFieldStyle,
+                          py: 0,
+                          backgroundColor: theme.palette.custom.white,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: theme.spacing(1),
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                            borderWidth: "0.5px",
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderWidth: "0.5px",
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                          },
+                        }}
+                      >
+                        <Select
+                          labelId="gender-label"
+                          value={editedData.personalInformation?.gender || ""}
+                          onChange={(e) => handleChange(e.target.value, "personalInformation", "gender")}
+                          displayEmpty
+                          sx={{
+                            "& .MuiSelect-select": {
+                              color: editedData.personalInformation?.gender ? "rgba(0, 0, 0, 0.87)" : theme.palette.custom.lightGrey,
+                              fontSize: "0.875rem",
+                            },
+                          }}
+                        >
+                          <MenuItem value="" disabled>
+                            Select Gender
+                          </MenuItem>
+                          <MenuItem value="Male">Male</MenuItem>
+                          <MenuItem value="Female">Female</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
                   </TableCell>
+
                 </TableRow>
 
                 {/* Date of Birth & Age */}
                 <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Date of Birth
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {convertDate(personalInfo.dateOfBirth, UI_DATE_FORMAT)}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {formatUIDisplayDate(personalInfo.dateOfBirth, UI_DATE_FORMAT)}
+                      </Typography>
+                    ) : (
+                      <DatePicker
+                        selected={
+                          formData.personalInformation.dateOfBirth
+                            ? new Date(formData.personalInformation.dateOfBirth.split("-").reverse().join("-"))
+                            : null
+                        }
+                        onChange={(date) => handleChange(date, "personalInformation", "dateOfBirth")}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="Select Date of Birth"
+                        customInput={
+                          <CustomDateInput
+                            value={formData.personalInformation.dateOfBirth || ""}
+                            onClear={() => handleChange(null, "personalInformation", "dateOfBirth")}
+                          />}
+                      />
+                    )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Age
                     </Typography>
                     <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {personalInfo.age}
+                      {calculatePersonalProfileAge(personalInfo.dateOfBirth)}
                     </Typography>
                   </TableCell>
                 </TableRow>
 
                 {/* Contact Number & Email Address */}
                 <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Contact Number
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {personalInfo.contactNumber || "N/A"}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {personalInfo.contactNumber || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Contact Number"
+                          value={formData.personalInformation.contactNumber}
+                          onChange={(e) => handleChange(e.target.value, 'personalInformation', 'contactNumber')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Email Address
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {personalInfo.emailAddress || "N/A"}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {personalInfo.emailAddress || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Email Address"
+                          value={formData.personalInformation.emailAddress}
+                          onChange={(e) => handleChange(e.target.value, 'personalInformation', 'emailAddress')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
 
@@ -396,9 +621,41 @@ const formatHistoryValue = (value) => {
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Address
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {personalInfo.address || "N/A"}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {personalInfo.address || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Address"
+                          value={formData.personalInformation.address}
+                          onChange={(e) => handleChange(e.target.value, 'personalInformation', 'address')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -407,409 +664,1563 @@ const formatHistoryValue = (value) => {
         )}
 
         {activeTab === 1 && (
-          <Box sx={{ px: 3, paddingBottom: 3, paddingTop: 0, minHeight: 0, maxHeight: "calc(100vh - 260px)", overflow: "auto" }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ padding:3, position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#FAFBFB" }}>
-                  <TableCell colSpan={2} sx={{ borderBottom: "none", paddingBottom: 0, marginBottom: 0, }}>
-                    <Box sx={{ display: "flex", gap: 1, justifyContent: "right" }}>
-                      <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }}>
-                        <img
-                          src={editIcon}
-                          alt="Edit"
-                          style={{ height: 20, width: 20 }}
-                        />
-                        <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
-                          Edit
-                        </Typography>
-                      </Button>
-                    </Box>
-                  </TableCell>
-                </TableRow>  
-              </TableHead>
-              <TableBody>
-                {/* Job Status & Role */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Status
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.status || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Role
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.role || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-
-                {/* Department & Branch */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Department
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.department || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Branch
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.branch || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-
-                {/* Job Offer Date & MOL*/}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Job Offer Date
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {convertDate(employmentDetails.jobOfferDate) || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      MOL
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.mol || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-
-                {/* Passport Number & Date of Passport Expiry */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Passport Number
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.passportNumber || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Date of Passport Expiry
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {convertDate(employmentDetails.passportValidity, UI_DATE_FORMAT) || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-
-                {/* Emirates ID Number & Emirates ID Validity */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Emirates ID Number
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.emiratesIdNumber || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Date of Passport Expiry
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {convertDate(employmentDetails.emiratesIdValidity, UI_DATE_FORMAT) || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-
-                
-                {/* Person Code & Visa File Number */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Person Code
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.personCode || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Visa File Number
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.visaFileNumber || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-
-                {/* Visa UID Number & Date of Visa Validity */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Visa UID Number
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.visaUidNumber || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Date of Visa Renewal
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {convertDate(employmentDetails.visaValidity, UI_DATE_FORMAT) || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-
-                {/* Work Permit Number and Personal Number */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Work Permit Number
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.workPermitNumber || "N/A"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Personal Number
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {employmentDetails.personalNumber || "N/A"}
-                    </Typography>
-                  </TableCell>
-                </TableRow> 
-
-                {/* Labour Card Validity */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                      Labour Card Validity
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {convertDate(employmentDetails.labourCardValidity, UI_DATE_FORMAT) || "N/A"}
-                    </Typography>
-                  </TableCell>                  
-                </TableRow>                    
-
-              </TableBody>
-            </Table>            
-          </Box>
-        )}
-        {activeTab === 2 && (
-          <Box sx={{ px: 3, paddingBottom: 3, paddingTop: 0, minHeight: 0, maxHeight: "calc(100vh - 260px)", overflow: "auto"  }}>
+          <Box sx={{ px: 3, paddingBottom: 3, paddingTop: 0, minHeight: 0, maxHeight: "calc(100vh - 260px)", overflowY: "auto", overflowX: "hidden" }}>
             <Table>
               <TableHead>
                 <TableRow sx={{ padding: 3, position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#FAFBFB" }}>
                   <TableCell colSpan={2} sx={{ borderBottom: "none", paddingBottom: 0, marginBottom: 0, }}>
                     <Box sx={{ display: "flex", gap: 1, justifyContent: "right" }}>
-                      <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }}>
-                        <img
-                          src={editIcon}
-                          alt="Edit"
-                          style={{ height: 20, width: 20 }}
-                        />
-                        <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
-                          Edit
-                        </Typography>
-                      </Button>
+                      {!isEditing && (
+                        <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }} onClick={handleEdit}>
+                          <img
+                            src={editIcon}
+                            alt="Edit"
+                            style={{ height: 20, width: 20 }}
+                          />
+                          <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                            Edit
+                          </Typography>
+                        </Button>
+                      )}
+                      {isEditing && (
+                        <>
+                          <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 3 }}
+                            onClick={handleSave}>
+                            <img
+                              src={saveIcon}
+                              alt="Save"
+                              style={{ height: 20, width: 20 }}
+                            />
+                            <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                              Save
+                            </Typography>
+                          </Button>
+                          <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }} onClick={handleCancel}>
+                            <img
+                              src={cancelIcon}
+                              alt="Cancel"
+                              style={{ height: 20, width: 20 }}
+                            />
+                            <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                              Cancel
+                            </Typography>
+                          </Button>
+                        </>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>             
+              <TableBody>
+                {/* Job Status & Role */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Status
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.status || "N/A"}
+                      </Typography>
+                    ) : (
+                      <FormControl
+                        fullWidth
+                        variant="outlined"
+                        sx={{
+                          ...uniformFieldStyle,
+                          py: 0,
+                          backgroundColor: theme.palette.custom.white,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: theme.spacing(1),
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                            borderWidth: "0.5px",
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderWidth: "0.5px",
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                          },
+                        }}
+                      >
+                        <Select
+                          labelId="status-label"
+                          value={editedData.employmentDetails?.status || ""}
+                          onChange={(e) => handleChange(e.target.value, "employmentDetails", "status")}
+                          displayEmpty
+                          sx={{
+                            "& .MuiSelect-select": {
+                              color: editedData.employmentDetails?.status ? "rgba(0, 0, 0, 0.87)" : theme.palette.custom.lightGrey,
+                              fontSize: "0.875rem",
+                            },
+                          }}
+                        >
+                          <MenuItem value="" disabled>
+                            Select Status
+                          </MenuItem>
+                          <MenuItem value="Active">Active</MenuItem>
+                          <MenuItem value="Inactive">Inactive</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Role
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.role || "N/A"}
+                      </Typography>
+                    ) : (
+                      <FormControl
+                        fullWidth
+                        variant="outlined"
+                        sx={{
+                          ...uniformFieldStyle,
+                          py: 0,
+                          backgroundColor: theme.palette.custom.white,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: theme.spacing(1),
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                            borderWidth: "0.5px",
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderWidth: "0.5px",
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                          },
+                        }}
+                      >
+                        <SearchableDropdown
+                          placeholder={employmentDetails.role}
+                          options={roles}
+                          value={editedData.employmentDetails.role}
+                          onSelect={(value) => {
+                            handleSelect("role", value);
+                            if (!roles.includes(value)) {
+                              const updatedRoles = [...roles, value];
+                              setRoles(updatedRoles);
+                              setUniqueRole(updatedRoles);
+                            }
+                          }}
+                          allowAddNew={true}
+                        />
+
+                      </FormControl>
+                    )}
+                  </TableCell>
+                </TableRow>
+
+                {/* Department & Branch */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Department
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.department || "N/A"}
+                      </Typography>
+                    ) : (
+                      <FormControl
+                        fullWidth
+                        variant="outlined"
+                        sx={{
+                          ...uniformFieldStyle,
+                          py: 0,
+                          backgroundColor: theme.palette.custom.white,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: theme.spacing(1),
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                            borderWidth: "0.5px",
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderWidth: "0.5px",
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                          },
+                        }}
+                      >
+                        <SearchableDropdown
+                          placeholder={employmentDetails.department}
+                          options={departments}
+                          value={editedData.employmentDetails.department}
+                          onSelect={(value) => {
+                            handleSelect("department", value);
+                            if (!departments.includes(value)) {
+                              const updatedDepartment = [...departments, value];
+                              setDepartments(updatedDepartment);
+                              setUniqueDepartment(updatedDepartment);
+                            }
+                          }}
+                          allowAddNew={true}
+                        />
+
+                      </FormControl>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Branch
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.branch || "N/A"}
+                      </Typography>
+                    ) : (
+                      <FormControl
+                        fullWidth
+                        variant="outlined"
+                        sx={{
+                          ...uniformFieldStyle,
+                          py: 0,
+                          backgroundColor: theme.palette.custom.white,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: theme.spacing(1),
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                            borderWidth: "0.5px",
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "rgba(122, 122, 122, 0.2)",
+                              borderWidth: "0.5px",
+                            },
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderWidth: "0.5px",
+                            borderColor: "rgba(122, 122, 122, 0.2)",
+                          },
+                        }}
+                      >
+                        <SearchableDropdown
+                          placeholder={employmentDetails.branch}
+                          options={branches}
+                          value={editedData.employmentDetails.branch}
+                          onSelect={(value) => {
+                            handleSelect("branch", value);
+                            if (!branches.includes(value)) {
+                              const updatedBranch = [...branches, value];
+                              setBranches(updatedBranch);
+                              setUniqueBranch(updatedBranch);
+                            }
+                          }}
+                          allowAddNew={true}
+                        />
+
+                      </FormControl>
+                    )}
+                  </TableCell>
+                </TableRow>
+
+                {/* Job Offer Date & MOL*/}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Job Offer Date
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {formatUIDisplayDate(employmentDetails.jobOfferDate, UI_DATE_FORMAT) || "NA"}
+                      </Typography>
+                    ) : (
+                      <DatePicker
+                        selected={
+                          formData.employmentDetails.jobOfferDate
+                            ? new Date(formData.employmentDetails.jobOfferDate.split("-").reverse().join("-"))
+                            : null
+                        }
+                        onChange={(date) => handleChange(date, "employmentDetails", "jobOfferDate")}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="Select Job Offer Date"
+                        customInput={
+                          <CustomDateInput
+                            value={formData.employmentDetails.jobOfferDate || ""}
+                            onClear={() => handleChange(null, "employmentDetails", "jobOfferDate")}
+                          />}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      MOL
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.mol || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="MOL"
+                          value={formData.employmentDetails.mol}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'mol')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                </TableRow>
+
+                {/* Passport Number & Date of Passport Expiry */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Passport Number
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.passportNumber || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Passport Number"
+                          value={formData.employmentDetails.passportNumber}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'passportNumber')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Passport Validity Date
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {formatUIDisplayDate(employmentDetails.passportValidity, UI_DATE_FORMAT) || "NA"}
+                      </Typography>
+                    ) : (
+                      <DatePicker
+                        selected={
+                          formData.employmentDetails.passportValidity
+                            ? new Date(formData.employmentDetails.passportValidity.split("-").reverse().join("-"))
+                            : null
+                        }
+                        onChange={(date) => handleChange(date, "employmentDetails", "passportValidity")}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="Select Passport Validity Date"
+                        customInput={
+                          <CustomDateInput
+                            value={formData.employmentDetails.passportValidity || ""}
+                            onClear={() => handleChange(null, "employmentDetails", "passportValidity")}
+                          />}
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+
+                {/* Emirates ID Number & Emirates ID Validity */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Emirates ID Number
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.emiratesIdNumber || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Emirates ID Number"
+                          value={formData.employmentDetails.emiratesIdNumber}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'emiratesIdNumber')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Emirates ID Validity Date
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {formatUIDisplayDate(employmentDetails.emiratesIdValidity, UI_DATE_FORMAT) || "NA"}
+                      </Typography>
+                    ) : (
+                      <DatePicker
+                        selected={
+                          formData.employmentDetails.emiratesIdValidity
+                            ? new Date(formData.employmentDetails.emiratesIdValidity.split("-").reverse().join("-"))
+                            : null
+                        }
+                        onChange={(date) => handleChange(date, "employmentDetails", "emiratesIdValidity")}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="Select Emirates ID Validity Date"
+                        customInput={
+                          <CustomDateInput
+                            value={formData.employmentDetails.emiratesIdValidity || ""}
+                            onClear={() => handleChange(null, "employmentDetails", "emiratesIdValidity")}
+                          />}
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+
+
+                {/* Person Code & Visa File Number */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Person Code
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.personCode || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Person Code"
+                          value={formData.employmentDetails.personCode}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'personCode')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Visa File Number
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.visaFileNumber || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Visa File Number"
+                          value={formData.employmentDetails.visaFileNumber}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'visaFileNumber')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                </TableRow>
+
+                {/* Visa UID Number & Date of Visa Validity */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Visa UID Number
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.visaUidNumber || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Visa UID Number"
+                          value={formData.employmentDetails.visaUidNumber}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'visaUidNumber')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Visa Renewal Date
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {formatUIDisplayDate(employmentDetails.visaValidity, UI_DATE_FORMAT) || "NA"}
+                      </Typography>
+                    ) : (
+                      <DatePicker
+                        selected={
+                          formData.employmentDetails.visaValidity
+                            ? new Date(formData.employmentDetails.visaValidity.split("-").reverse().join("-"))
+                            : null
+                        }
+                        onChange={(date) => handleChange(date, "employmentDetails", "visaValidity")}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="Select Visa Validity Date"
+                        customInput={
+                          <CustomDateInput
+                            value={formData.employmentDetails.visaValidity || ""}
+                            onClear={() => handleChange(null, "employmentDetails", "visaValidity")}
+                          />}
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+
+                {/* Work Permit Number and Personal Number */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Work Permit Number
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.workPermitNumber || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Work Permit Number"
+                          value={formData.employmentDetails.workPermitNumber}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'workPermitNumber')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Personal Number
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {employmentDetails.personalNumber || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Personal Number"
+                          value={formData.employmentDetails.personalNumber}
+                          onChange={(e) => handleChange(e.target.value, 'employmentDetails', 'personalNumber')}
+                        />
+                      </Box>
+                    )}
+                  </TableCell>
+                </TableRow>
+
+                {/* Labour Card Validity */}
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                      Labour Card Validity Date
+                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {formatUIDisplayDate(employmentDetails.labourCardValidity, UI_DATE_FORMAT) || "NA"}
+                      </Typography>
+                    ) : (
+                      <DatePicker
+                        selected={
+                          formData.employmentDetails.labourCardValidity
+                            ? new Date(formData.employmentDetails.labourCardValidity.split("-").reverse().join("-"))
+                            : null
+                        }
+                        onChange={(date) => handleChange(date, "employmentDetails", "labourCardValidity")}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="Select Labour Card Validity Date"
+                        customInput={
+                          <CustomDateInput
+                            value={formData.employmentDetails.labourCardValidity || ""}
+                            onClear={() => handleChange(null, "employmentDetails", "labourCardValidity")}
+                          />}
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+
+              </TableBody>
+            </Table>
+          </Box>
+        )}
+
+        {activeTab === 2 && (
+          <Box sx={{ px: 3, paddingBottom: 3, paddingTop: 0, minHeight: 0, maxHeight: "calc(100vh - 260px)", overflowY: "auto", overflowX: "hidden" }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ padding: 3, position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#FAFBFB" }}>
+                  <TableCell colSpan={2} sx={{ borderBottom: "none", paddingBottom: 0, marginBottom: 0, }}>
+                    <Box sx={{ display: "flex", gap: 1, justifyContent: "right" }}>
+                      {!isEditing && (
+                        <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }} onClick={handleEdit}>
+                          <img
+                            src={editIcon}
+                            alt="Edit"
+                            style={{ height: 20, width: 20 }}
+                          />
+                          <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                            Edit
+                          </Typography>
+                        </Button>
+                      )}
+                      {isEditing && (
+                        <>
+                          <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 3 }}
+                            onClick={handleSave}>
+                            <img
+                              src={saveIcon}
+                              alt="Save"
+                              style={{ height: 20, width: 20 }}
+                            />
+                            <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                              Save
+                            </Typography>
+                          </Button>
+                          <Button sx={{ backgroundColor: theme.palette.custom.white, borderRadius: "8px", px: 2 }} onClick={handleCancel}>
+                            <img
+                              src={cancelIcon}
+                              alt="Cancel"
+                              style={{ height: 20, width: 20 }}
+                            />
+                            <Typography variant="sm3" sx={{ color: theme.palette.custom.darkBrown }}>
+                              Cancel
+                            </Typography>
+                          </Button>
+                        </>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {/* Salary Package and Basic Salary */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Salary Package
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.salaryPackage)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.salaryPackage)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Salary Package"
+                          value={formData.compensationDetails.salaryPackage}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'salaryPackage')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Basic Salary
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.basicSalary)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.basicSalary)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Basic Salary"
+                          value={formData.compensationDetails.basicSalary}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'basicSalary')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
 
                 {/* Accommodation and Transportation Allowance */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Accommodation Allowance
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.accommodationAllowance)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.accommodationAllowance)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Accommodation Allowance"
+                          value={formData.compensationDetails.accommodationAllowance}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'accommodationAllowance')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Transportation Allowance
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.transportationAllowance)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.transportationAllowance)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Transportation Allowance"
+                          value={formData.compensationDetails.transportationAllowance}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'transportationAllowance')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
 
                 {/* Food & Communication Allowance */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Food Allowance
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.foodAllowance)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.foodAllowance)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Food Allowance"
+                          value={formData.compensationDetails.foodAllowance}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'foodAllowance')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Communication Allowance
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.communicationAllowance)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.communicationAllowance)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Communication Allowance"
+                          value={formData.compensationDetails.communicationAllowance}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'communicationAllowance')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
 
                 {/* General Allowance $ Daily Gross Rate */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                    General Allowance
+                      General Allowance
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.generalAllowance)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.generalAllowance)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="General Allowance"
+                          value={formData.compensationDetails.generalAllowance}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'generalAllowance')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Daily Gross Rate
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.dailyGrossRate)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.dailyGrossRate)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Daily Gross Rate"
+                          value={formData.compensationDetails.dailyGrossRate}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'dailyGrossRate')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
+
                 {/* Hourly Gross Rate & Holiday Pay Rate */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Hourly Gross Rate
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.hourlyGrossRate)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.hourlyGrossRate)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Hourly Gross Rate"
+                          value={formData.compensationDetails.hourlyGrossRate}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'hourlyGrossRate')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Holiday Pay Rate
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.holidayPayRate)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.holidayPayRate)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Holiday Pay Rate"
+                          value={formData.compensationDetails.holidayPayRate}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'holidayPayRate')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
                 {/* Overtime Rate & Cancelled Off Rate */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                    Overtime Rate
+                      Overtime Rate
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.overtimeRate)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.overtimeRate)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Overtime Rate"
+                          value={formData.compensationDetails.overtimeRate}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'overtimeRate')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
-                    Cancelled Off Rate
+                      Cancelled Off Rate
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.cancelledOffRate)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.cancelledOffRate)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Cancelled Off Rate"
+                          value={formData.compensationDetails.cancelledOffRate}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'cancelledOffRate')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                </TableRow>                
+                </TableRow>
                 {/* Absences Rate & Vacation Leave */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Absences Rate
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${formatDecimalValue(compensationDetails.absencesRate)} AED`}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${formatDecimalValue(compensationDetails.absencesRate)} AED`}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Absences Rate"
+                          value={formData.compensationDetails.absencesRate}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'absencesRate')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Vacation Leave
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${compensationDetails.vacationLeave} Days` || "N/A"}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${compensationDetails.vacationLeave} Days` || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Vacation Leave"
+                          value={formData.compensationDetails.vacationLeave}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'vacationLeave')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                </TableRow>     
+                </TableRow>
                 {/* Sick Leave & Maternity Leave */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
-                  <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Sick Leave
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${compensationDetails.sickLeave} Days` || "N/A"}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${compensationDetails.sickLeave} Days` || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Sick Leave"
+                          value={formData.compensationDetails.sickLeave}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'sickLeave')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell sx={{ width: "50%" }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
                     <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Maternity Leave
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${compensationDetails.maternityLeave} Days` || "N/A"}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${compensationDetails.maternityLeave} Days` || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Maternity Leave"
+                          value={formData.compensationDetails.maternityLeave}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'maternityLeave')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
                 {/* Bereavement Leave */}
-                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}`}}>
-                  <TableCell sx={{ width: "50%" }}>
-                  <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
+                <TableRow sx={{ borderBottom: `2px solid ${theme.palette.custom.greyBorder}` }}>
+                  <TableCell sx={{ width: "50%", minWidth: "200px", maxWidth: "100%" }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.custom.lightGrey, fontWeight: 600 }}>
                       Bereavement Leave
                     </Typography>
-                    <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
-                      {`${compensationDetails.bereavementLeave} Days` || "N/A"}
-                    </Typography>
+                    {!isEditing ? (
+                      <Typography variant="h6" sx={{ color: theme.palette.custom.darkGrey, fontWeight: 600 }}>
+                        {`${compensationDetails.bereavementLeave} Days` || "N/A"}
+                      </Typography>
+                    ) : (
+                      <Box>
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...uniformFieldStyle,
+                            py: 0,
+                            backgroundColor: theme.palette.custom.white,
+                            borderRadius: theme.spacing(1),
+                            "& .MuiInputBase-input::placeholder": {
+                              color: theme.palette.custom.lighterGrey,
+                              opacity: 1,
+                              fontSize: "0.875rem",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.greyBorder} !important`,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                border: `1px solid ${theme.palette.custom.lighterGrey} !important`,
+                              },
+                            },
+                          }}
+                          placeholder="Bereavement Leave"
+                          value={formData.compensationDetails.bereavementLeave}
+                          onChange={(e) => handleChange(e.target.value, 'compensationDetails', 'bereavementLeave')}
+                        />
+                      </Box>
+                    )}
                   </TableCell>
-                </TableRow>                                   
+                </TableRow>
               </TableBody>
-            </Table>            
+            </Table>
           </Box>
         )}
+
         {activeTab === 3 && (
-          <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+          <Box sx={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, maxHeight: "calc(100vh - 317px)", overflow: "auto" }}>
             {/* History | Header */}
             <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
               <Box sx={{
-                position: "sticky",
                 top: 0,
                 backgroundColor: theme.palette.custom.greyBorder,
                 zIndex: 10,
               }}>
-                <Table sx={{ width: "100%", tableLayout: "fixed" }}>
+                <Table stickyHeader sx={{ width: "100%", tableLayout: "fixed" }}>
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: theme.palette.custom.greyBorder }}>
+                    <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
                       <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <img
@@ -872,15 +2283,11 @@ const formatHistoryValue = (value) => {
                       </TableCell>
                     </TableRow>
                   </TableHead>
-              </Table>
-            </Box>
-            <Box sx={{ minHeight: 0, maxHeight: "calc(100vh - 317px)", overflow: "auto" }}>
-                <Table sx={{ width: "100%", tableLayout: "fixed" }}>
                   <TableBody>
                     {employee.history.map((row, index) => (
-                      <TableRow key={index}>
-                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                          {convertDate(row.date, UI_DATE_FORMAT) || "N/A"}
+                      <TableRow key={index} sx={{ backgroundColor: theme.palette.custom.white }}>
+                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, }}>
+                          {formatUIDisplayDate(row.date, UI_DATE_FORMAT) || "N/A"}
                         </TableCell>
                         <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                           {row.type}
@@ -898,7 +2305,7 @@ const formatHistoryValue = (value) => {
                     ))}
                   </TableBody>
                 </Table>
-            </Box>
+              </Box>
             </TableContainer>
           </Box>
         )}

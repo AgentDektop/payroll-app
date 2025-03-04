@@ -46,6 +46,12 @@ const SearchableDropdown = ({ placeholder, options, onSelect, allowAddNew = fals
           {...params}
           placeholder={!inputValue && !selectedValue ? placeholder : ""}
           InputLabelProps={{ shrink: false }}
+          sx={{ 
+            "& .MuiInputBase-input::placeholder": {
+              color: "#303131 !important",
+              opacity: 1
+            }
+          }}
         />
       )}
     />

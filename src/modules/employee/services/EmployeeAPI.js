@@ -33,6 +33,19 @@ const addEmployee = async (employeeData) => {
   }
 };
 
+const updateEmployee = async (employeeId, data) => {
+  try {
+    console.log("updateEmployee - Sending API request to:", `${EMPLOYEE_API_URL}/${employeeId}`);
+    console.log("updateEmployee - Payload:", JSON.stringify(data, null, 2));
+    const response = await axios.put(`${EMPLOYEE_API_URL}/${employeeId}`, data, {
+      headers: { "Content-Type": "application/json" },
+    });
+    console.log("updateEmployee - Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating employee:", error.response?.data || error.message);
+    throw error;
+  }
+};
 
-
-export { fetchEmployees, fetchEmployeeById, addEmployee };
+export { fetchEmployees, fetchEmployeeById, addEmployee, updateEmployee };

@@ -6,7 +6,7 @@ import useEmployeeDataById from "../hooks/useEmployeeDataById";
 const EmployeePersonalInfoPage = () => {
 
   const { id  } = useParams();
-  const { employee, error } = useEmployeeDataById(id);
+  const { employee, error, fetchEmployeeData } = useEmployeeDataById(id);
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -18,7 +18,7 @@ const EmployeePersonalInfoPage = () => {
 
   return (
     <div>
-      <EmployeePersonalInfo employee={employee} />
+      <EmployeePersonalInfo employee={employee} fetchEmployeeData={fetchEmployeeData} />
     </div>
   );
 };

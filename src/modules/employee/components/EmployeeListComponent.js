@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -40,6 +40,22 @@ import phoneIcon from "../../shared/assets/icon/phone-icon.png";
 
 const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetchData }) => {
   const theme = useTheme();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
+
+  const filteredEmployees = employees.filter(employee => {
+    const matchesSearch = searchTerm
+      ? employee.personalInformation.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
+      : true;
+
+    const matchesStatus = selectedStatus !== "" ? employee.employmentDetails.status === selectedStatus : true;
+    const matchesRole = selectedRole !== "" ? employee.employmentDetails.role === selectedRole : true;
+    const matchesBranch = selectedBranch !== "" ? employee.employmentDetails.branch === selectedBranch : true;
+
+    return matchesSearch && matchesStatus && matchesRole && matchesBranch;
+  });
 
   const activeCount = employees.filter(emp => emp.employmentDetails.status === "Active").length;
   const inactiveCount = employees.filter(emp => emp.employmentDetails.status === "Inactive").length;
@@ -107,24 +123,24 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
                 display: { xs: 'none', sm: 'inline-flex' }
               }}
               onClick={() => setOpen(true)}
-              >
+            >
               <img
                 src={addEmployeeIcon}
                 alt="Add Employee"
                 style={{ width: 20, height: 20 }}
-              
+
               />
               Add Employee
             </Button>
-            <AddEmployeeModal 
-              open={open} 
-              onClose={() => 
-              setOpen(false)} 
+            <AddEmployeeModal
+              open={open}
+              onClose={() =>
+                setOpen(false)}
               onSuccess={() => {
                 console.log("Employee successfully added!");
                 fetchData();
-              }} 
-              />
+              }}
+            />
             <IconButton
               sx={{
                 display: { xs: 'inline-flex', sm: 'none' },
@@ -146,6 +162,8 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
           <TextField
             placeholder="Search Employee"
             size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             sx={{
               backgroundColor: theme.palette.custom.white,
               boxShadow: theme.shadows.card,
@@ -187,20 +205,14 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
               }}
             >
               <Select
-                defaultValue={label}
-                MenuProps={{ disablePortal: true, disableScrollLock: true}}
-                renderValue={(selected) => (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {icons[selected] && ( 
-                      <img
-                        src={icons[selected]}
-                        alt={selected}
-                        style={{ width: 20, height: 20 }}
-                      />
-                    )}
-                    <span>{selected}</span>
-                  </div>
-                )}
+                value={label === "Status" ? selectedStatus : label === "Role" ? selectedRole : selectedBranch}
+                onChange={(e) => {
+                  if (label === "Status") setSelectedStatus(e.target.value);
+                  if (label === "Role") setSelectedRole(e.target.value);
+                  if (label === "Branch") setSelectedBranch(e.target.value);
+                }}
+                displayEmpty // This ensures the default label appears
+                MenuProps={{ disablePortal: true, disableScrollLock: true }}
                 sx={{
                   backgroundColor: theme.palette.custom.darkerGrey,
                   "& .MuiOutlinedInput-notchedOutline": {
@@ -211,9 +223,28 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
                     borderRadius: theme.spacing(1),
                   },
                 }}
+                renderValue={(selected) => {
+                  if (!selected) {
+                    return (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {icons[label] && (
+                          <img src={icons[label]} alt={label} style={{ width: 20, height: 20 }} />
+                        )}
+                        <span>{label}</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {icons[selected] && (
+                        <img src={icons[selected]} alt={selected} style={{ width: 20, height: 20 }} />
+                      )}
+                      <span>{selected}</span>
+                    </div>
+                  );
+                }}
               >
-
-                <MenuItem value={label}>
+                <MenuItem value="">
                   <ListItemText primary={label} />
                 </MenuItem>
 
@@ -230,6 +261,7 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
                     <MenuItem key={i} value={item}>{item}</MenuItem>
                   ))}
               </Select>
+
             </FormControl>
           ))}
 
@@ -244,7 +276,7 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
           margin: "auto",
           width: "100%"
         }}>
-          {employees.map((employee) => (
+          {filteredEmployees.map((employee) => (
             <Card
               key={employee.employeeId}
               sx={{
@@ -286,7 +318,7 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
                   }}
                 />
                 <Avatar
-                  src={employee.avatar} 
+                  src={employee.avatar}
                   sx={{ width: 50, height: 50, margin: "auto", marginBottom: theme.spacing(1) }}
                 />
                 <Typography variant="lg1" textAlign="center"
@@ -340,7 +372,7 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
                       style={{ width: 20, height: 20, paddingRight: 2, marginRight: 3 }}
                     />
                     {employee.employmentDetails.branch}
-                  </Typography>                  
+                  </Typography>
                   <Typography variant="sm2"
                     sx={{ display: "flex", color: theme.palette.custom.darkGrey, paddingBottom: 0.5 }}>
                     <img
@@ -362,20 +394,20 @@ const EmployeeList = ({ employees, uniqueStatus, uniqueRole, uniqueBranch, fetch
                 </Box>
               </CardContent>
               <CardActions
-                  sx={{
-                    flexDirection: "row-reverse",
-                    marginRight: theme.spacing(1),
-                    paddingBottom: theme.spacing(3)
-                  }}
+                sx={{
+                  flexDirection: "row-reverse",
+                  marginRight: theme.spacing(1),
+                  paddingBottom: theme.spacing(3)
+                }}
+              >
+                <Link
+                  to={`/employee/${employee.employeeId}`}
+                  style={{ color: theme.palette.custom.darkGrey, fontFamily: "Open Sans", fontSize: "12px" }}
                 >
-                  <Link
-                    to={`/employee/${employee.employeeId}`}
-                    style={{ color: theme.palette.custom.darkGrey, fontFamily: "Open Sans", fontSize: "12px" }}
-                  >
-                    View Details
-                    <ArrowForwardIos sx={{ fontSize: theme.icons.icon2, marginLeft: theme.spacing(0.1) }} />
-                  </Link>
-                </CardActions>
+                  View Details
+                  <ArrowForwardIos sx={{ fontSize: theme.icons.icon2, marginLeft: theme.spacing(0.1) }} />
+                </Link>
+              </CardActions>
             </Card>
           ))}
         </Box>
