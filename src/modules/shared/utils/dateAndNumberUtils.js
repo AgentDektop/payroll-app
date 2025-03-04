@@ -1,11 +1,10 @@
-import { isValid, parse , differenceInYears } from 'date-fns';
+import { isValid, parse , differenceInYears} from 'date-fns';
 import { formatInTimeZone } from "date-fns-tz";
 
-const convertDate = (dateString, formatString, timeZone = "Asia/Dubai") => {
+const formatUIDisplayDate = (dateString, formatString, timeZone = "Asia/Dubai") => {
   if (!dateString) return "Invalid Date"; 
   
   const parsedDate = parse(dateString, "dd-MM-yyyy", new Date());
-  console.log("parsedDate", parsedDate)
 
   if (!isValid(parsedDate)) return "Invalid Date";
   const escapedFormatString = formatString ? formatString.replace(/([^\w\s])/g, "'$1'") : 'MMMM dd, yyyy';
@@ -13,13 +12,22 @@ const convertDate = (dateString, formatString, timeZone = "Asia/Dubai") => {
   return formatInTimeZone(parsedDate, timeZone, escapedFormatString );
 };
 
-const calculateAge = (dateInput) => {
-  if (!(dateInput instanceof Date) || !isValid(dateInput)) {
-    console.error("Invalid date in calculateAge:", dateInput);
+const parseDateString = (dateString, formatString = "dd-MM-yyyy") => {
+  if (!dateString) return null;
+
+  const parsedDate = parse(dateString, formatString, new Date());
+
+  return isValid(parsedDate) ? parsedDate : null;
+};
+
+const calculatePersonalProfileAge = (dateInput) => {
+  if (!dateInput) return "Invalid Date"; 
+  const parsedDate = parse(dateInput, "dd-MM-yyyy", new Date());
+  if (!(parsedDate instanceof Date) || !isValid(parsedDate)) {
     return null;
   }
 
-  return differenceInYears(new Date(), dateInput);
+  return differenceInYears(new Date(), parsedDate);
 };
 
 
@@ -40,4 +48,4 @@ const formatDecimalValue = (value) => {
 };
   
 
-export { convertDate, calculateAge, formatDecimalValue };
+export { formatUIDisplayDate, calculatePersonalProfileAge, formatDecimalValue, parseDateString };

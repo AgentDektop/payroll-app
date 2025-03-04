@@ -43,7 +43,7 @@ const useAllEmployeeData = () => {
     fetchData();
   }, [fetchData]);
 
-  return { employees, uniqueStatus, uniqueRole, uniqueBranch, uniqueDepartment, error, fetchData };
+  return { employees, uniqueStatus, uniqueRole, setUniqueRole, uniqueBranch, setUniqueBranch, uniqueDepartment, setUniqueDepartment, error, fetchData };
 };
 
 export default useAllEmployeeData;

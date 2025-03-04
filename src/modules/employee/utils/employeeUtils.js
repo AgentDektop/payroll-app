@@ -71,12 +71,13 @@ const prepareEmployeePayload = (formData, isEdit = false) => {
     if (isEdit) {
       Object.keys(formattedData).forEach((section) => {
         Object.keys(formattedData[section]).forEach((field) => {
-          if (formattedData[section][field] === "" || formattedData[section][field] == null) {
+          if (formattedData[section][field] == null) { // Only remove NULL, not empty strings
             delete formattedData[section][field];
           }
         });
       });
-    } else {
+    }
+     else {
       formattedData.employeeId = formData.employeeId;
     }
   
