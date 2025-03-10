@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { Drawer, Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { Menu } from '@mui/icons-material';
-import paaderoIcon from "../assets/icon/panadero-icon.png";
+import panaderoIcon from "../assets/icon/panadero-icon.png";
 import employeeIcon from "../assets/icon/employee-icon.png";
 import employeeSelectedIcon from "../assets/icon/employee-selected-icon.png";
 import dashboardSelectedIcon from "../assets/icon/dashboard-selected-icon.png";
@@ -15,6 +15,7 @@ import appsIcon from "../assets/icon/apps-icon.png";
 import profileIcon from "../assets/icon/account-circle-icon.png";
 import exitToApp from "../assets/icon/exit-to-app-icon.png";
 import separatorIcon from "../assets/icon/horizontal-line-separator-icon.png"
+import { useAuth } from './AuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -22,12 +23,18 @@ const Sidebar = () => {
   const theme = useTheme();
   const xs = useMediaQuery(theme.breakpoints.down('xs'));
   const sm = useMediaQuery(theme.breakpoints.down('sm'));
+  const { logout } = useAuth(); 
 
   const [open, setOpen] = useState(false); // State for toggling the mobile drawer
 
   const handleDrawerToggle = () => {
     setOpen(!open);
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+};
 
   return (
     <>
@@ -75,9 +82,9 @@ const Sidebar = () => {
   {/* Logo */}
   <Box
     component="img"
-    src={paaderoIcon}
+    src={panaderoIcon}
     alt="Logo"
-    sx={{ width: 45, height: 45, marginBottom: 3, marginTop: 4 }}
+    sx={{ width: 55, height: 46, marginBottom: 3, marginTop: 4 }}
     onClick={() => navigate('/')}
   />
 
@@ -124,7 +131,7 @@ const Sidebar = () => {
     <IconButton sx={{ mb: 2 }}>
       <img src={profileIcon} alt="Profile" style={{ width: 24, height: 24 }} />
     </IconButton>
-    <IconButton>
+    <IconButton onClick={handleLogout}>
       <img src={exitToApp} alt="Logout" style={{ width: 24, height: 24 }} />
     </IconButton>
   </Box>
