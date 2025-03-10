@@ -9,24 +9,32 @@ import Sidebar from './modules/shared/components/Sidebar';
 import EmployeePersonalInfoPage from './modules/employee/pages/EmployeePersonalInfoPage';
 import PayrollListPage from './modules/payrun/pages/PayrollListPage';
 import PayRun from './modules/payrun/pages/PayrunPage';
+import PrivateRoute from './modules/shared/components/PrivateRoute';
+import LoginPage from './modules/shared/pages/LoginPage';
+import AppPortalPage from './modules/shared/pages/AppPortalPage';
+import { AuthProvider } from './modules/shared/components/AuthContext';
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <AuthProvider>
+      <ThemeProvider theme={theme}>
       <BrowserRouter>
         <div>
           <Routes>
-            <Route path="/" element={<Sidebar />}>
-              <Route path="/employee/all" element={<EmployeeListPage />}/>
-              <Route path="/employee/:id" element={<EmployeePersonalInfoPage />} />
+            <Route path='/login' element={<LoginPage/>}/>
+            <Route path="/" element={<PrivateRoute element={<Sidebar />} />}>
+              <Route path="/employee/all" element={<PrivateRoute element={<EmployeeListPage />} />}/>
+              <Route path="/employee/:id" element={<PrivateRoute element={<EmployeePersonalInfoPage/>} />} />
               <Route path="/time-and-attendance/by-period" />
-              <Route path="/payrun" element={<PayrollListPage/>} />
-              <Route path="/payrun/:id" element={<PayRun/>} />
+              <Route path="/payrun" element={<PrivateRoute element={<PayrollListPage/>}/>} />
+              <Route path="/payrun/:id" element={<PrivateRoute element={<PayRun/>} />} />
             </Route>
+            <Route path="/portal" element={<PrivateRoute element={<AppPortalPage />} />}/>
           </Routes>
         </div>
       </BrowserRouter>
     </ThemeProvider>
+    </AuthProvider>
   );
 }
 
