@@ -1,3 +1,4 @@
+import axios from "axios";
 const PAYRUN_API_URL = "http://localhost:5050/pay-run";
 
 const fetchPayRun = async () => {
@@ -16,4 +17,18 @@ const fetchPayRunById = async (id) => {
   return await response.json();
 }
 
-export { fetchPayRun, fetchPayRunById}
+const approvePayrun = async (payRunId, approved, rejected) => {
+  try {
+    const response = await axios.put(`${PAYRUN_API_URL}/approve`, {
+      payRunId,
+      approved,
+      rejected,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating pay run approval:", error);
+    throw error;
+  }
+};
+
+export { fetchPayRun, fetchPayRunById, approvePayrun}

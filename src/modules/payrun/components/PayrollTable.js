@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import useGetAllPayRun from "../hooks/useGetAllPayRun";
-import { Table, TableHead, TableRow, TableCell, TableBody, Typography, Button, Box, Select, MenuItem, TableContainer, Paper } from "@mui/material";
+import { Table, TableHead, TableRow, TableCell, TableBody, Typography, Button, Box, Select, MenuItem, TableContainer, Paper, Snackbar, Alert } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import payperidFilterIcon from "../../shared/assets/icon/payrun-per-period-filter-icon.png";
 import processPayrunIcon from "../../shared/assets/icon/process-payrun-icon.png";
@@ -10,14 +10,28 @@ import payRunIdIcon from "../../shared/assets/icon/payrun-id-icon.png";
 import payRunDateIcon from "../../shared/assets/icon/payrun-date-icon.png";
 import payRunTotalCostIcon from "../../shared/assets/icon/total-payroll-cost-icon.png";
 import payRunTotalDeductionIcon from "../../shared/assets/icon/total-deduction-icon.png";
-import payRunApprovedIcon from "../../shared/assets/icon/payrun-approve-icon.png";
+import payRunApproveIcon from "../../shared/assets/icon/payrun-approve-icon.png";
+import payRunRejectIcon from "../../shared/assets/icon/payrun-reject-icon.png";
 import { formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
 import { Link } from "react-router-dom";
+import { approvePayrun } from "../service/PayRunAPI";
+import { useAuth } from "../../shared/components/AuthContext";
 
 const PayrollTable = () => {
   const theme = useTheme();
   const { payRun, uniquePayPeriod, error, fetchPayRunData } = useGetAllPayRun();
   const [selectedPayPeriod, setSelectedPayPeriod] = useState("");
+  const { user } = useAuth();
+  const userRole = user?.role || "";
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };  
 
   useEffect(() => {
     if (uniquePayPeriod.length > 0) {
@@ -188,7 +202,13 @@ const PayrollTable = () => {
                 </TableHead>
                 <TableBody>
                   {filteredPayRun.map((run) => (
-                    <TableRow key={run.payRunId} sx={{ backgroundColor: theme.palette.custom.white}}>
+                    <TableRow 
+                      key={run.payRunId} 
+                      sx={{
+                        backgroundColor: run.approved
+                          ? theme.palette.custom.lightGreen
+                          : theme.palette.custom.white
+                          }}>
                       <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                         {run.payRunId}
                       </TableCell>
@@ -212,13 +232,56 @@ const PayrollTable = () => {
                               />
                             </Button>
                           </Link>
-                          <Button sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}>
-                            <img
-                              src={payRunApprovedIcon}
-                              alt="Approve Pay Run"
-                              style={{ width: 24, height: 24 }}
-                            />
-                          </Button>
+                          {run.approved?(
+                            userRole === "Admin" && (
+                              <Button
+                                onClick={() =>
+                                  approvePayrun(run.payRunId, false, true)
+                                    .then(() => {
+                                      fetchPayRunData();
+                                      showSnackbar("Pay run rejected successfully!", "success");
+                                    })
+                                    .catch((err) => {
+                                      console.error(err);
+                                      showSnackbar("Failed to reject pay run.", "error");
+                                    })
+                                }
+                                sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}
+                              >
+                                <img src={payRunRejectIcon} alt="Reject Pay Run" style={{ width: 24, height: 24 }} />
+                              </Button>
+                            )
+                          ) : (
+                            ["Admin", "Payroll"].includes(userRole) && (
+                              <Button
+                                onClick={() => {
+                                  const existingApproved = payRun.some(
+                                    (p) =>
+                                      p.payRunId !== run.payRunId &&
+                                      p.period.periodStart === run.period.periodStart &&
+                                      p.period.periodEnd === run.period.periodEnd &&
+                                      p.approved
+                                  );
+                                    if (!existingApproved) {
+                                      approvePayrun(run.payRunId, true, false)
+                                        .then(() => {
+                                          fetchPayRunData();
+                                          showSnackbar("Pay run approved successfully!", "success");
+                                        })
+                                        .catch((err) => {
+                                          console.error(err);
+                                          showSnackbar("Failed to approve pay run.", "error");
+                                        });
+                                    } else {
+                                      showSnackbar("A pay run for this period is already approved.", "warning");
+                                    }
+                                }}
+                                sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}
+                              >
+                                <img src={payRunApproveIcon} alt="Approve Pay Run" style={{ width: 24, height: 24 }} />
+                              </Button>
+                            )
+                          )}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -228,6 +291,20 @@ const PayrollTable = () => {
             </Box>
           </TableContainer>
         </Box>
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={(event, reason) => {
+            if (reason !== "clickaway") {
+              setSnackbarOpen(false);
+            }
+          }}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: "100%" }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </Paper>
     </Box>
   );
