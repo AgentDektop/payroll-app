@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchPayRun } from "../service/PayRunAPI";
+import { fetchPayRun } from "../services/PayRunAPI";
 import { parse, compareAsc } from "date-fns";
 
 const useGetAllPayRun = () => {

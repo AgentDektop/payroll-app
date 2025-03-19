@@ -14,8 +14,9 @@ import payRunApproveIcon from "../../shared/assets/icon/payrun-approve-icon.png"
 import payRunRejectIcon from "../../shared/assets/icon/payrun-reject-icon.png";
 import { formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
 import { Link } from "react-router-dom";
-import { approvePayrun } from "../service/PayRunAPI";
+import { approvePayrun } from "../services/PayRunAPI";
 import { useAuth } from "../../shared/components/AuthContext";
+import ProcessPayRunModal from "./ProcessPayRunModal";
 
 const PayrollTable = () => {
   const theme = useTheme();
@@ -26,12 +27,19 @@ const PayrollTable = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+const refreshPayRunData = async () => {
+  await fetchPayRunData();
+  setRefreshKey((prev) => prev + 1); // Force re-render
+};
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setSnackbarOpen(true);
-  };  
+  };
 
   useEffect(() => {
     if (uniquePayPeriod.length > 0) {
@@ -67,7 +75,7 @@ const PayrollTable = () => {
                 alt="Pay Period"
                 style={{ width: 24, height: 24 }}
               />
-              Pay period: 
+              Pay period:
             </Typography>
             <Select
               value={selectedPayPeriod || ""}
@@ -99,7 +107,7 @@ const PayrollTable = () => {
           </Box>
 
           {/* Right: Process Pay Run Button */}
-          <Button variant="contained" size="small"
+          <Button variant="contained" size="small" onClick={() => setModalOpen(true)}
             sx={{
               display: { xs: 'none', sm: 'inline-flex' }
             }}
@@ -111,6 +119,13 @@ const PayrollTable = () => {
             />
             Process Pay Run
           </Button>
+          <ProcessPayRunModal 
+            open={modalOpen} 
+            onClose={() => setModalOpen(false)}
+            refreshPayRunData={async() => { 
+              await refreshPayRunData();
+              }} 
+            />
         </Box>
       </Box>
 
@@ -129,7 +144,7 @@ const PayrollTable = () => {
         elevation={0}
       >
         <Box sx={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, maxHeight: "calc(100vh - 270px)", overflow: "auto" }}>
-          <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
+          <TableContainer key={refreshKey} sx={{ flexGrow: 1, width: "100%" }}>
             <Box sx={{
               top: 0,
               backgroundColor: theme.palette.custom.greyBorder,
@@ -202,13 +217,13 @@ const PayrollTable = () => {
                 </TableHead>
                 <TableBody>
                   {filteredPayRun.map((run) => (
-                    <TableRow 
-                      key={run.payRunId} 
+                    <TableRow
+                      key={run.payRunId}
                       sx={{
                         backgroundColor: run.approved
                           ? theme.palette.custom.lightGreen
                           : theme.palette.custom.white
-                          }}>
+                      }}>
                       <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                         {run.payRunId}
                       </TableCell>
@@ -222,7 +237,7 @@ const PayrollTable = () => {
                         {formatDecimalValue(run.totalPayrollDeductions)} AED
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: "flex", flexDirection: "row", padding: 0, margin: 0}}>
+                        <Box sx={{ display: "flex", flexDirection: "row", padding: 0, margin: 0 }}>
                           <Link to={`/payrun/${run.payRunId}`} style={{ textDecoration: 'none' }}>
                             <Button sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}>
                               <img
@@ -232,7 +247,7 @@ const PayrollTable = () => {
                               />
                             </Button>
                           </Link>
-                          {run.approved?(
+                          {run.approved ? (
                             userRole === "Admin" && (
                               <Button
                                 onClick={() =>
@@ -262,19 +277,19 @@ const PayrollTable = () => {
                                       p.period.periodEnd === run.period.periodEnd &&
                                       p.approved
                                   );
-                                    if (!existingApproved) {
-                                      approvePayrun(run.payRunId, true, false)
-                                        .then(() => {
-                                          fetchPayRunData();
-                                          showSnackbar("Pay run approved successfully!", "success");
-                                        })
-                                        .catch((err) => {
-                                          console.error(err);
-                                          showSnackbar("Failed to approve pay run.", "error");
-                                        });
-                                    } else {
-                                      showSnackbar("A pay run for this period is already approved.", "warning");
-                                    }
+                                  if (!existingApproved) {
+                                    approvePayrun(run.payRunId, true, false)
+                                      .then(() => {
+                                        fetchPayRunData();
+                                        showSnackbar("Pay run approved successfully!", "success");
+                                      })
+                                      .catch((err) => {
+                                        console.error(err);
+                                        showSnackbar("Failed to approve pay run.", "error");
+                                      });
+                                  } else {
+                                    showSnackbar("A pay run for this period is already approved.", "warning");
+                                  }
                                 }}
                                 sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}
                               >

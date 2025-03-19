@@ -125,7 +125,7 @@ const Sidebar = () => {
     <IconButton sx={{ mb: 2,  }} disableRipple>
       <img src={separatorIcon} alt="Separator" style={{ width: 55}} />
     </IconButton>
-    <IconButton sx={{ mb: 2 }}>
+    <IconButton sx={{ mb: 2 }} onClick={() => navigate('/portal')}>
       <img src={appsIcon} alt="Apps" style={{ width: 24, height: 24 }} />
     </IconButton>
     <IconButton sx={{ mb: 2 }}>
