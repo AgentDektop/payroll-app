@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchPayRunById } from "../service/PayRunAPI";
+import { fetchPayRunById } from "../services/PayRunAPI";
 
 const useGetPayRunById = (payRunId) => {
     const [payrun, setPayRun] = useState(null);
