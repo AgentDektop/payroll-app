@@ -13,6 +13,8 @@ import PrivateRoute from './modules/shared/components/PrivateRoute';
 import LoginPage from './modules/shared/pages/LoginPage';
 import AppPortalPage from './modules/shared/pages/AppPortalPage';
 import { AuthProvider } from './modules/shared/components/AuthContext';
+import TimeAttendancePage from './modules/timeAndAttendance/pages/TimeAndAttendancePage';
+import EmployeeAttendanceDetail from './modules/timeAndAttendance/components/EmployeeAttendanceDetailComponent';
 
 function App() {
   return (
@@ -25,7 +27,8 @@ function App() {
             <Route path="/" element={<PrivateRoute element={<Sidebar />} />}>
               <Route path="/employee/all" element={<PrivateRoute element={<EmployeeListPage />} />}/>
               <Route path="/employee/:id" element={<PrivateRoute element={<EmployeePersonalInfoPage/>} />} />
-              <Route path="/time-and-attendance/by-period" />
+              <Route path="/time-and-attendance/by-period" element={<PrivateRoute element={<TimeAttendancePage/>}/>} />
+              <Route path="/time-attendance/:employeeId" element={<PrivateRoute element={<EmployeeAttendanceDetail/>}/>} />
               <Route path="/payrun" element={<PrivateRoute element={<PayrollListPage/>}/>} />
               <Route path="/payrun/:id" element={<PrivateRoute element={<PayRun/>} />} />
             </Route>
