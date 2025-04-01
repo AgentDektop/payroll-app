@@ -279,6 +279,7 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
           }}
         >
           <Tab
+            disableRipple
             label="Personal Information"
             icon={
               <img
@@ -294,10 +295,12 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
               width: "25%",
               display: 'flex',
               justifyContent: 'center',
-              fontSize: 15,
+              fontSize: 20,
+              textTransform: "capitalize"
             }}
           />
           <Tab
+            disableRipple
             label="Employee Details"
             icon={
               <img
@@ -313,10 +316,12 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
               width: "25%",
               display: 'flex',
               justifyContent: 'center',
-              fontSize: 15,
+              fontSize: 20,
+              textTransform: "capitalize"
             }}
           />
           <Tab
+            disableRipple
             label="Compensation Details"
             icon={
               <img
@@ -332,10 +337,12 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
               width: "25%",
               display: 'flex',
               justifyContent: 'center',
-              fontSize: 15,
+              fontSize: 20,
+              textTransform: "capitalize",
             }}
           />
           <Tab
+            disableRipple
             label="History"
             icon={
               <img
@@ -351,6 +358,8 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
               width: "25%",
               display: 'flex',
               justifyContent: 'center',
+              textTransform: "capitalize",
+              fontSize: 20
             }}
           />
         </Tabs>

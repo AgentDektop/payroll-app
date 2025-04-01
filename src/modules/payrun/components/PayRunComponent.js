@@ -217,22 +217,25 @@ const PayRunComponent = ({ payrun }) => {
                     }}
                 >
                     <Tab
+                        disableRipple
                         label="Summary"
                         icon={<img src={activeTab === 0 ? summarySelectedIcon : summaryIcon} alt="Summary" style={{ width: 24, height: 24 }} />}
                         iconPosition="start"
-                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 15, mx: 4 }}
+                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
                     />
                     <Tab
+                        disableRipple
                         label="Earnings"
                         icon={<img src={activeTab === 1 ? earningsSelectedIcon : earningsIcon} alt="Earnings" style={{ width: 24, height: 24 }} />}
                         iconPosition="start"
-                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 15, mx: 4 }}
+                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
                     />
                     <Tab
+                        disableRipple
                         label="Deductions"
                         icon={<img src={activeTab === 2 ? deductionsSelectedIcon : deductionsIcon} alt="Deductions" style={{ width: 24, height: 24 }} />}
                         iconPosition="start"
-                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 15, mx: 4 }}
+                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
                     />
                 </Tabs>
 

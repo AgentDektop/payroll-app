@@ -37,7 +37,7 @@ const calculatePersonalProfileAge = (dateInput) => {
  */
 
 const formatDecimalValue = (value) => {
-  if (!value) return "N/A";
+  if (!value) return "-";
 
   const number = value["$numberDecimal"] ?? value;
 

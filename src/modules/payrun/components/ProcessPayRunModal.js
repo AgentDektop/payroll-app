@@ -190,6 +190,7 @@ const ProcessPayRunModal = ({ open, onClose, refreshPayRunData }) => {
             scrollableYearDropdown
             yearDropdownItemNumber={10}
             inline
+            withPortal
           />
         </Box>
 

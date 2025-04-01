@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import useGetAllPayRun from "../hooks/useGetAllPayRun";
 import { Table, TableHead, TableRow, TableCell, TableBody, Typography, Button, Box, Select, MenuItem, TableContainer, Paper, Snackbar, Alert } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import payperidFilterIcon from "../../shared/assets/icon/payrun-per-period-filter-icon.png";
+import payperiodFilterIcon from "../../shared/assets/icon/payrun-per-period-filter-icon.png";
 import processPayrunIcon from "../../shared/assets/icon/process-payrun-icon.png";
 import payRunActionIcon from "../../shared/assets/icon/payrun-action-icon.png";
 import payRunViewIcon from "../../shared/assets/icon/payrun-view-icon.png";
@@ -68,10 +68,10 @@ const refreshPayRunData = async () => {
         {/*Pay Period Filter + Process Button */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 3 }}>
           {/* Left: Pay Period */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: theme.spacing(2) }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography variant="md2" sx={{ color: theme.palette.custom.lightGrey, display: "flex", alignItems: "center", gap: 1 }}>
               <img
-                src={payperidFilterIcon}
+                src={payperiodFilterIcon}
                 alt="Pay Period"
                 style={{ width: 24, height: 24 }}
               />
