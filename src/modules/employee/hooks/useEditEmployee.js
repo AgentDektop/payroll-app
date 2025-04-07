@@ -115,22 +115,6 @@ const useEmployeeEdit = (employee, fetchEmployeeData) => {
 
   const handleEdit = () => setIsEditing(true);
 
-  // const handleSave = async () => {
-  //   try {
-  //     console.log("handleSave - Current Edited Data (Before Formatting):", editedData);
-  
-  //     const formattedData = prepareEmployeePayload(editedData, true);
-  
-  //     console.log("handleSave - Formatted Data (Before API Call):", formattedData);
-  
-  //     await updateEmployee(employee.employeeId, formattedData);
-  
-  //     setIsEditing(false);
-  //   } catch (error) {
-  //     console.error("Error updating employee:", error);
-  //   }
-  // };
-  
   const handleSave = async () => {
     try {
       let formattedData = prepareEmployeePayload(editedData, true);
