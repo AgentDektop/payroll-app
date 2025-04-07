@@ -26,4 +26,15 @@ const  uploadTimeRecord  = async ({ startDate, endDate, file }) => {
   return response.data;
 };
 
-export { fetchAttendanceByPeriod, uploadTimeRecord }
+const addEmployeeOvertime = async (overtimeData) => {
+  try {
+    const response = await axios.post(`${TIME_AND_ATTENDANCE_API_URL}/overtime`, overtimeData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data
+  } catch (error) {
+    throw (error);
+  }
+}
+
+export { fetchAttendanceByPeriod, uploadTimeRecord, addEmployeeOvertime }

@@ -37,26 +37,24 @@ import overtimeTabIcon from "../../shared/assets/icon/attendance-overtime-tab-ic
 import timeOffTabSelectedIcon from "../../shared/assets/icon/attendance-timeoff-tab-selected-icon.png";
 import timeOffTabIcon from "../../shared/assets/icon/attendance-timeoff-tab-icon.png";
 import addIcon from "../../shared/assets/icon/attendance-add-icon.png";
+import AddOvertimeModal from "./AddOvertimeModal";
 
 const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData }) => {
-    // State for the bottom set of tabs (Attendance, Overtime, Time Off)
-    const [tabValue, setTabValue] = useState(0);
+    const [activeTab, setActiveTab] = useState(0);
     const navigate = useNavigate();
     const theme = useTheme();
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const [open, setOpen] = useState(false);
-    // Retrieve the start and end dates from the query parameters
     const formattedStartDate = searchParams.get("startDate");
     const formattedEndDate = searchParams.get("endDate");
 
-    // Assuming employee data is passed via location.state.
     const employee = location.state?.employee;
     const attendance = employee.attendance || {};
     const overtime = employee.overtime || {};
     const timeOff = employee.timeOff || {};
+    const documentId = employee._id;
 
-    // Fallback if employee data is not available.
     if (!employee) {
         return (
             <Box sx={{ p: 2 }}>
@@ -65,10 +63,9 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
         );
     }
 
-    // Handle changes for the bottom tabs.
     const handleChange = (event, newValue) => {
-        setTabValue(newValue);
-    };
+        setActiveTab(newValue);
+    };     
 
     return (
         <Box
@@ -140,7 +137,7 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                         alt="Separator"
                         sx={{ height: 40, width: "auto", px: 3 }}
                     />
-                    {tabValue === 0 && (
+                    {activeTab === 0 && (
                         <Box sx={{ display: "flex", flexDirection: "row", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                                 <Typography
@@ -180,7 +177,7 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                             </Box>
                         </Box>
                     )}
-                    {tabValue === 1 && (
+                    {activeTab === 1 && (
                         <Box sx={{ display: "flex", flexDirection: "row", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                                 <Typography
@@ -196,7 +193,7 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                             </Box>
                         </Box>
                     )}
-                    {tabValue === 2 && (
+                    {activeTab === 2 && (
                         <Box sx={{ display: "flex", flexDirection: "row", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                                 <Typography
@@ -253,7 +250,7 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                 }}
             >
                 <Tabs
-                    value={tabValue}
+                    value={activeTab}
                     onChange={handleChange}
                     variant="scrollable"
                     scrollButtons="auto"
@@ -273,26 +270,26 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                     <Tab
                         disableRipple
                         label="Attendance"
-                        icon={<img src={tabValue === 0 ? attendanceTabSelectedIcon : attendanceTabIcon} alt="Attendance" style={{ width: 24, height: 24 }} />}
+                        icon={<img src={activeTab === 0 ? attendanceTabSelectedIcon : attendanceTabIcon} alt="Attendance" style={{ width: 24, height: 24 }} />}
                         iconPosition="start"
                         sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
                     />
                     <Tab
                         disableRipple
                         label="Overtime"
-                        icon={<img src={tabValue === 1 ? overtimeTabSelectedIcon : overtimeTabIcon} alt="Overtime" style={{ width: 24, height: 24 }} />}
+                        icon={<img src={activeTab === 1 ? overtimeTabSelectedIcon : overtimeTabIcon} alt="Overtime" style={{ width: 24, height: 24 }} />}
                         iconPosition="start"
                         sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
                     />
                     <Tab
                         disableRipple
                         label="Time Off"
-                        icon={<img src={tabValue === 2 ? timeOffTabSelectedIcon : timeOffTabIcon} alt="Time Off" style={{ width: 24, height: 24 }} />}
+                        icon={<img src={activeTab === 2 ? timeOffTabSelectedIcon : timeOffTabIcon} alt="Time Off" style={{ width: 24, height: 24 }} />}
                         iconPosition="start"
                         sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
                     />
                 </Tabs>
-                {tabValue === 1 &&(
+                {activeTab === 1 &&(
                     <Button variant="contained" size="small"
                         sx={{
                             display: { xs: 'none', sm: 'inline-flex' }
@@ -308,7 +305,12 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                         Add Overtime
                     </Button>
                 )}
-                {tabValue === 2 &&(
+                <AddOvertimeModal 
+                    open={open} 
+                    onClose={() => setOpen(false)}
+                    documentId={documentId}
+                     />
+                {activeTab === 2 &&(
                     <Button variant="contained" size="small"
                         sx={{
                             display: { xs: 'none', sm: 'inline-flex' }
@@ -326,7 +328,6 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                 )}
             </Box>
 
-            {/* Bottom Tabs Section for Attendance Details */}
             <Paper sx={{
                 width: "90%",
                 maxWidth: 1450,
@@ -341,7 +342,7 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                 elevation={0}>
 
                 <Box sx={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, maxHeight: "calc(100vh - 280px)", overflow: "auto" }}>
-                    {tabValue === 0 && (
+                    {activeTab === 0 && (
                         <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
                             <Box sx={{
                                 top: 0,
@@ -475,7 +476,7 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                         </TableContainer>
                     )}
 
-                    {tabValue === 1 && (
+                    {activeTab === 1 && (
                         <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
                             <Box sx={{
                                 top: 0,
@@ -562,7 +563,7 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                         </TableContainer>
                     )}
 
-                    {tabValue === 2 && (
+                    {activeTab === 2 && (
                         <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
                             <Box sx={{
                                 top: 0,
