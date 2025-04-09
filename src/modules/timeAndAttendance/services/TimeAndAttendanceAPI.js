@@ -37,4 +37,15 @@ const addEmployeeOvertime = async (overtimeData) => {
   }
 }
 
-export { fetchAttendanceByPeriod, uploadTimeRecord, addEmployeeOvertime }
+const addEmployeeTimeOff = async (timeOffData) => {
+  try {
+    const response = await axios.post(`${TIME_AND_ATTENDANCE_API_URL}/timeoff`, timeOffData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data
+  } catch (error) {
+    throw (error);
+  }
+}
+
+export { fetchAttendanceByPeriod, uploadTimeRecord, addEmployeeOvertime, addEmployeeTimeOff }
