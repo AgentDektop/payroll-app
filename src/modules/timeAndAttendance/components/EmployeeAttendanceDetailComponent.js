@@ -38,6 +38,7 @@ import timeOffTabSelectedIcon from "../../shared/assets/icon/attendance-timeoff-
 import timeOffTabIcon from "../../shared/assets/icon/attendance-timeoff-tab-icon.png";
 import addIcon from "../../shared/assets/icon/attendance-add-icon.png";
 import AddOvertimeModal from "./AddOvertimeModal";
+import AddTimeOffModal from "./AddTimeOffModal";
 
 const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData }) => {
     const [activeTab, setActiveTab] = useState(0);
@@ -326,6 +327,11 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                         Add Time Off
                     </Button>
                 )}
+                <AddTimeOffModal 
+                    open={open} 
+                    onClose={() => setOpen(false)}
+                    documentId={documentId}
+                     />
             </Box>
 
             <Paper sx={{
