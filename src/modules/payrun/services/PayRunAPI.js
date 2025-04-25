@@ -17,7 +17,33 @@ const downloadPayslip = async (payRunId) => {
 
     const downloadLink = document.createElement("a");
     downloadLink.href = url;
-    downloadLink.download = `Payslips_${payRunId}.zip`;
+    downloadLink.download = `PAYSLIP_${payRunId}.zip`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+
+    downloadLink.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download error:", error);
+  }
+};
+
+const downloadSIF = async (payRunId) => {
+  try {
+    const response = await fetch(`${PAYRUN_API_URL}/download-sif/${payRunId}`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to download sif");
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.download = `SIF_${payRunId}.zip`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
 
@@ -73,4 +99,4 @@ const processPayRun = async (startDate, endDate) => {
   }
 };
 
-export { fetchPayRun, fetchPayRunById, approvePayrun, processPayRun, downloadPayslip }
+export { fetchPayRun, fetchPayRunById, approvePayrun, processPayRun, downloadPayslip, downloadSIF }

@@ -29,7 +29,7 @@ import tardinessIcon from "../../shared/assets/icon/payrun-deductions-tardiness.
 import totalEarningsIcon from "../../shared/assets/icon/total-payroll-cost-icon.png";
 import employeeSearchIcon from "../../shared/assets/icon/search-employee-icon.png";
 import { formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
-import { downloadPayslip } from "../services/PayRunAPI";
+import { downloadPayslip, downloadSIF } from "../services/PayRunAPI";
 
 const PayRunComponent = ({ payrun }) => {
 
@@ -735,6 +735,7 @@ const PayRunComponent = ({ payrun }) => {
 
             {payrun.approved && (
                 <Box sx={{ display: "flex", justifyContent: "flex-end", py: 2, width: "90%" }}>
+                    {/* Download Payslip Button */}
                     <Button
                         variant="contained"
                         color="primary"
@@ -745,9 +746,32 @@ const PayRunComponent = ({ payrun }) => {
                             fontWeight: 600,
                             px: 3,
                             py: 1,
+                            mr: 2,
+                            "&:hover": {
+                                bgcolor: "#4b240c",
+                            },
                         }}
                     >
                         Download Payslip
+                    </Button>
+
+                    {/* Download SIF Button */}
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => downloadSIF(payrun.payRunId)}
+                        sx={{
+                            textTransform: "none",
+                            borderRadius: 2,
+                            fontWeight: 600,
+                            px: 3,
+                            py: 1,
+                            "&:hover": {
+                                bgcolor: "#4b240c",
+                            },
+                        }}
+                    >
+                        Download SIF
                     </Button>
                 </Box>
             )}

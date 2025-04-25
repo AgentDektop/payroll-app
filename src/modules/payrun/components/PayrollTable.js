@@ -111,7 +111,10 @@ const PayrollTable = () => {
           {/* Right: Process Pay Run Button */}
           <Button variant="contained" size="small" onClick={() => setModalOpen(true)}
             sx={{
-              display: { xs: 'none', sm: 'inline-flex' }
+              display: { xs: 'none', sm: 'inline-flex' },
+              "&:hover": {
+                bgcolor: "#4b240c",
+              },
             }}
           >
             <img
