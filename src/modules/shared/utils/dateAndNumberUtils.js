@@ -46,6 +46,25 @@ const formatDecimalValue = (value) => {
     maximumFractionDigits: 2,
   }).format(number);
 };
+
+const formatDuration = (totalHours) => {
+  if (!totalHours) return "-";
+
+  const totalSeconds = Math.floor(totalHours * 3600);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const parts = [];
+  if (days) parts.push(`${days}d`);
+  if (hours) parts.push(`${hours}h`);
+  if (minutes) parts.push(`${minutes}m`);
+  if (seconds || !parts.length) parts.push(`${seconds}s`);
+
+  const result = parts.join(' ').trim();
+  return result === "0s" ? "-" : result;
+};
   
 
-export { formatUIDisplayDate, calculatePersonalProfileAge, formatDecimalValue, parseDateString };
+export { formatUIDisplayDate, calculatePersonalProfileAge, formatDecimalValue, parseDateString, formatDuration };

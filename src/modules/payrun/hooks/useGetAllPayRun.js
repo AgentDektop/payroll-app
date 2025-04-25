@@ -7,8 +7,10 @@ const useGetAllPayRun = () => {
   const [uniquePayPeriod, setUniquePayPeriod] = useState([]);
   const [selectedPayPeriod, setSelectedPayPeriod] = useState("");
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchPayRunData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const data = await fetchPayRun();
 
@@ -32,6 +34,8 @@ const useGetAllPayRun = () => {
     } catch (err) {
       console.error("Error fetching pay runs:", err);
       setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -39,7 +43,7 @@ const useGetAllPayRun = () => {
     fetchPayRunData();
   }, [fetchPayRunData]);
 
-  return { payRun, uniquePayPeriod, selectedPayPeriod, setSelectedPayPeriod, error, fetchPayRunData };
+  return { payRun, uniquePayPeriod, selectedPayPeriod, setSelectedPayPeriod, error, fetchPayRunData, isLoading };
 };
 
 export default useGetAllPayRun;
