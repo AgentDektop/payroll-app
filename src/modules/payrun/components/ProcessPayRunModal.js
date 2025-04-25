@@ -6,60 +6,43 @@ import {
   ButtonGroup,
   Typography,
   Snackbar,
+  useTheme,
+  IconButton,
+  TextField,
   Alert,
 } from "@mui/material";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+
+import dateIcon from "../../shared/assets/icon/attendance-tab-date-icon.png";
+import CloseIcon from "@mui/icons-material/Close";
+
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
+
 import { processPayRun, fetchPayRun } from "../services/PayRunAPI";
 import { format } from "date-fns";
 
-const ProcessPayRunModal = ({ open, onClose, refreshPayRunData }) => {
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "warning",
-  });
+const ProcessPayRunModal = ({ open, onClose, refreshPayRunData, showSnackbar }) => {
+  const theme = useTheme();
 
-  // Update date range only if dates are valid.
-  const handleDateChange = (update) => {
-    if (!update || update.length === 0) {
-      setDateRange([null, null]);
-      return;
-    }
-    if (!update[0]) {
-      setDateRange([null, null]);
-      return;
-    }
-    const selectedStart = update[0];
-    if (selectedStart.getDate() !== 26) {
-      setSnackbar({
-        open: true,
-        message: "Start date should be the 26th.",
-        severity: "error",
-      });
-      return;
-    }
-    if (update.length === 1 || !update[1]) {
-      setDateRange([selectedStart, null]);
-      return;
-    }
-    const selectedEnd = update[1];
-    if (!selectedEnd || selectedEnd.getDate() !== 25) {
-      setSnackbar({
-        open: true,
-        message: "End date should be the 25th.",
-        severity: "error",
-      });
-      // Set valid date only.
-      setDateRange([selectedStart, null]);
-      return;
-    }
-    setDateRange([selectedStart, selectedEnd]);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "warning" });
+  const [loading, setLoading] = useState(false);
+
+  const resetForm = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setSnackbar({ open: false, message: "", severity: "warning" });
+    setLoading(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   const handleProcess = async () => {
-    const [startDate, endDate] = dateRange;
     if (!startDate || !endDate) {
       setSnackbar({
         open: true,
@@ -69,10 +52,29 @@ const ProcessPayRunModal = ({ open, onClose, refreshPayRunData }) => {
       return;
     }
 
+    if (startDate.getDate() !== 26) {
+      setSnackbar({
+        open: true,
+        message: "Start date should be the 26th.",
+        severity: "error",
+      });
+      return;
+    }
+
+    if (endDate.getDate() !== 25) {
+      setSnackbar({
+        open: true,
+        message: "End date should be the 25th.",
+        severity: "error",
+      });
+      return;
+    }
+
     const formattedStartDate = format(startDate, "dd-MM-yyyy");
     const formattedEndDate = format(endDate, "dd-MM-yyyy");
     const periodString = `${formattedStartDate} - ${formattedEndDate}`;
 
+    setLoading(true);
     // Validate time and attendance.
     try {
       const taResponse = await fetch(
@@ -96,9 +98,12 @@ const ProcessPayRunModal = ({ open, onClose, refreshPayRunData }) => {
         severity: "error",
       });
       return;
+    } finally {
+      setLoading(false);
     }
 
     // Validate if a pay run for the same period is already approved using fetchPayRun.
+    setLoading(true);
     try {
       const prData = await fetchPayRun();
       if (
@@ -124,103 +129,153 @@ const ProcessPayRunModal = ({ open, onClose, refreshPayRunData }) => {
         severity: "error",
       });
       return;
+    } finally {
+      setLoading(false);
     }
 
     // Process the pay run if validations pass.
+    setLoading(true);
     try {
       await processPayRun(startDate, endDate);
-      setSnackbar({
-        open: true,
-        message: `Pay run processed successfully for period: Start Date ${formattedStartDate} to End Date ${formattedEndDate}`,
-        severity: "success",
-      });
+      showSnackbar(
+        `Pay run processed successfully for period: Start Date ${formattedStartDate} to End Date ${formattedEndDate}`,
+        "success"
+      );
 
-      setTimeout(() => {
-        onClose();
-      }, 6000);
-     
       if (refreshPayRunData) {
         refreshPayRunData();
       }
+      handleClose();
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Failed to process pay run.",
-        severity: "error",
-      });
+      showSnackbar("Failed to process pay run.", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const textFieldStyles = {
+    mb: 2,
+    "& .MuiInputBase-input": {
+      ...theme.typography.md3
+    },
+    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+    "& label": { color: "#7A7A7A" },
+    "& label.Mui-focused": { color: "#AF8862" },
+    "& .MuiOutlinedInput-root.Mui-focused fieldset": { borderColor: "#AF886230" },
+  };
+
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={handleClose}>
       <Box
         sx={{
           width: 400,
-          bgcolor: "white",
-          p: 3,
+          bgcolor: "#FAFBFB",
+          p: 4,
           mx: "auto",
-          my: "20vh",
-          borderRadius: 2,
+          my: "15vh",
+          borderRadius: 3,
+          boxShadow: 10,
+          position: "relative",
         }}
       >
-        <Typography variant="h6" sx={{ mb: 2 }}>
+        {/* Close Button */}
+        <IconButton onClick={handleClose} sx={{ position: "absolute", top: 10, right: 10 }}>
+          <CloseIcon />
+        </IconButton>
+
+        <Typography variant="h6" fontWeight={600} mb={3}>
           Process Pay Run
         </Typography>
 
-        {/* Date Range Picker */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: "10px",
-          }}
-        >
+        {snackbar.open && (
+          <Alert
+            severity={snackbar.severity}
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            sx={{
+              mb: 3,
+              fontSize: "0.675rem",
+              py: 0,
+              px: 1.5,
+              borderRadius: 1,
+              alignItems: "center",
+            }}
+          >
+            {snackbar.message}
+          </Alert>
+        )}
+
+        {/* Start Date Field */}
+        <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
           <DatePicker
-            selected={dateRange[0]}
-            onChange={handleDateChange}
-            startDate={dateRange[0]}
-            endDate={dateRange[1]}
-            selectsRange
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Select pay run period"
+            selected={startDate}
+            onChange={(date) => setStartDate(date)}
+            dateFormat="dd-MM-yyyy"
             isClearable
             showMonthDropdown
             showYearDropdown
             scrollableYearDropdown
             yearDropdownItemNumber={10}
-            inline
-            withPortal
+            customInput={
+              <TextField
+                label="Period Start Date"
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <img src={dateIcon} alt="Period Start Date" style={{ width: 20, height: 20 }} />
+                  ),
+                }}
+                sx={textFieldStyles}
+              />
+            }
+          />
+        </Box>
+
+        {/* End Date Field */}
+        <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => setEndDate(date)}
+            dateFormat="dd-MM-yyyy"
+            isClearable
+            showMonthDropdown
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={10}
+            customInput={
+              <TextField
+                label="Period End Date"
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <img src={dateIcon} alt="Period End Date" style={{ width: 20, height: 20 }} />
+                  ),
+                }}
+                sx={textFieldStyles}
+              />
+            }
           />
         </Box>
 
         {/* Buttons */}
-        <Box sx={{ mt: 3 }}>
-          <ButtonGroup fullWidth>
-            <Button onClick={onClose} color="secondary">
-              Cancel
-            </Button>
-            <Button onClick={handleProcess} variant="contained" color="primary">
-              Process
-            </Button>
-          </ButtonGroup>
+        <Box sx={{ display: "flex", flexDirection: "column", mb: 2, alignItems: "center" }}>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleProcess}
+            sx={{
+              bgcolor: "#693714",
+              color: "#ffffff",
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 600,
+              "&:hover": { bgcolor: "#4b240c" },
+            }}
+          >
+            Process
+          </Button>
         </Box>
 
-        {/* Snackbar for alerts */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            sx={{ width: "100%" }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
+        <LoadingOverlay open={loading} />
       </Box>
     </Modal>
   );

@@ -29,6 +29,7 @@ import tardinessIcon from "../../shared/assets/icon/payrun-deductions-tardiness.
 import totalEarningsIcon from "../../shared/assets/icon/total-payroll-cost-icon.png";
 import employeeSearchIcon from "../../shared/assets/icon/search-employee-icon.png";
 import { formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
+import { downloadPayslip } from "../services/PayRunAPI";
 
 const PayRunComponent = ({ payrun }) => {
 
@@ -59,14 +60,12 @@ const PayRunComponent = ({ payrun }) => {
     return (
         <Box
             sx={{
-                width: "100%",
-                height: "100%",
-                bgcolor: "transparent",
+                height: "100vh",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                py: 4,
                 overflow: "hidden",
+                py: 3,
             }}
         >
             {/* Header Section */}
@@ -119,10 +118,10 @@ const PayRunComponent = ({ payrun }) => {
                         }}>
                         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1 }}>
                             {/* Payroll Header */}
-                            <Typography variant="header2" sx={{ color: theme.palette.custom.darkGrey}}>
+                            <Typography variant="header2" sx={{ color: theme.palette.custom.darkGrey }}>
                                 Pay Run
                             </Typography>
-                            <Typography variant="header4" sx={{ color: theme.palette.custom.lightGrey}}>
+                            <Typography variant="header4" sx={{ color: theme.palette.custom.lightGrey }}>
                                 {payrun.payRunId}
                             </Typography>
                         </Box>
@@ -136,20 +135,20 @@ const PayRunComponent = ({ payrun }) => {
                         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                             <Typography
                                 variant="sm2"
-                                sx={{ color: theme.palette.custom.lightGrey}}>
-                                Employee's Net Pay:
+                                sx={{ color: theme.palette.custom.lightGrey }}>
+                                Employee's Net Pay
                             </Typography>
                             <Typography
                                 variant="header3"
                                 sx={{ color: theme.palette.custom.darkGrey }}>
-                                {`${formatDecimalValue(payrun.totalPayrollCost)} AED`|| "N/A"}
+                                {`${formatDecimalValue(payrun.totalPayrollCost)} AED` || "N/A"}
                             </Typography>
                         </Box>
                         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                             <Typography
                                 variant="sm2"
-                                sx={{ color: theme.palette.custom.lightGrey}}>
-                                Employee's Deductions:
+                                sx={{ color: theme.palette.custom.lightGrey }}>
+                                Employee's Deductions
                             </Typography>
                             <Typography
                                 variant="header3"
@@ -161,7 +160,7 @@ const PayRunComponent = ({ payrun }) => {
                             <Typography
                                 variant="sm2"
                                 sx={{ color: theme.palette.custom.lightGrey }}>
-                                Pay Run Date:
+                                Pay Run Date
                             </Typography>
                             <Typography
                                 variant="header3"
@@ -172,8 +171,8 @@ const PayRunComponent = ({ payrun }) => {
                         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
                             <Typography
                                 variant="sm2"
-                                sx={{ color: theme.palette.custom.lightGrey}}>
-                                No of Employees:
+                                sx={{ color: theme.palette.custom.lightGrey }}>
+                                No of Employees
                             </Typography>
                             <Typography
                                 variant="header3"
@@ -272,7 +271,7 @@ const PayRunComponent = ({ payrun }) => {
                     boxShadow: "1px 1px 10px rgba(175, 136, 98, 0.25)",
                     padding: 0,
                     margin: 2,
-                    overflow: "hidden",
+                    overflow: "hidden"
                 }}
                 elevation={0}
             >
@@ -285,7 +284,7 @@ const PayRunComponent = ({ payrun }) => {
                                 backgroundColor: theme.palette.custom.greyBorder,
                                 zIndex: 10,
                             }}>
-                                <Table stickyHeader sx={{ width: "100%"}}>
+                                <Table stickyHeader sx={{ width: "100%" }}>
                                     <TableHead>
                                         <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
                                             <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
@@ -388,7 +387,7 @@ const PayRunComponent = ({ payrun }) => {
                                 backgroundColor: theme.palette.custom.greyBorder,
                                 zIndex: 10,
                             }}>
-                                <Table stickyHeader sx={{ width: "100%"}}>
+                                <Table stickyHeader sx={{ width: "100%" }}>
                                     <TableHead>
                                         <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
                                             <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}`, px: 1 }}>
@@ -528,7 +527,7 @@ const PayRunComponent = ({ payrun }) => {
                                     <TableBody>
                                         {filterEmployees(payrun.earnings).map((row, index) => (
                                             <TableRow key={index} sx={{ backgroundColor: theme.palette.custom.white }}>
-                                            <TableCell
+                                                <TableCell
                                                     sx={{
                                                         borderRight: `1px solid ${theme.palette.custom.greyBorder}`,
                                                     }}
@@ -594,7 +593,7 @@ const PayRunComponent = ({ payrun }) => {
                                 backgroundColor: theme.palette.custom.greyBorder,
                                 zIndex: 10,
                             }}>
-                                <Table stickyHeader sx={{ width: "100%"}}>
+                                <Table stickyHeader sx={{ width: "100%" }}>
                                     <TableHead>
                                         <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
                                             <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
@@ -660,6 +659,18 @@ const PayRunComponent = ({ payrun }) => {
                                             <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                                     <img
+                                                        src={tardinessIcon}
+                                                        alt="Undertime"
+                                                        style={{ width: 15, height: 15 }}
+                                                    />
+                                                    <Typography variant="md3">
+                                                        Undertime
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                    <img
                                                         src={totalDeductionIcon}
                                                         alt="Total"
                                                         style={{ width: 15, height: 15 }}
@@ -674,7 +685,7 @@ const PayRunComponent = ({ payrun }) => {
                                     <TableBody>
                                         {filterEmployees(payrun.deductions).map((row, index) => (
                                             <TableRow key={index} sx={{ backgroundColor: theme.palette.custom.white }}>
-                                            <TableCell
+                                                <TableCell
                                                     sx={{
                                                         fontSize: "12px",
                                                         borderRight: `1px solid ${theme.palette.custom.greyBorder}`,
@@ -707,6 +718,9 @@ const PayRunComponent = ({ payrun }) => {
                                                     {formatDecimalValue(row.tardiness)}
                                                 </TableCell>
                                                 <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                                                    {formatDecimalValue(row.undertime)}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
                                                     {formatDecimalValue(row.total)}
                                                 </TableCell>
                                             </TableRow>
@@ -718,9 +732,27 @@ const PayRunComponent = ({ payrun }) => {
                     </Box>
                 )}
             </Paper>
+
+            {payrun.approved && (
+                <Box sx={{ display: "flex", justifyContent: "flex-end", py: 2, width: "90%" }}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => downloadPayslip(payrun.payRunId)}
+                        sx={{
+                            textTransform: "none",
+                            borderRadius: 2,
+                            fontWeight: 600,
+                            px: 3,
+                            py: 1,
+                        }}
+                    >
+                        Download Payslip
+                    </Button>
+                </Box>
+            )}
         </Box>
     );
 };
-
 
 export default PayRunComponent;

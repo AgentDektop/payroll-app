@@ -17,10 +17,11 @@ import { Link } from "react-router-dom";
 import { approvePayrun } from "../services/PayRunAPI";
 import { useAuth } from "../../shared/components/AuthContext";
 import ProcessPayRunModal from "./ProcessPayRunModal";
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
 
 const PayrollTable = () => {
   const theme = useTheme();
-  const { payRun, uniquePayPeriod, error, fetchPayRunData } = useGetAllPayRun();
+  const { payRun, uniquePayPeriod, error, fetchPayRunData, isLoading } = useGetAllPayRun();
   const [selectedPayPeriod, setSelectedPayPeriod] = useState("");
   const { user } = useAuth();
   const userRole = user?.role || "";
@@ -29,11 +30,12 @@ const PayrollTable = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [modalOpen, setModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-const refreshPayRunData = async () => {
-  await fetchPayRunData();
-  setRefreshKey((prev) => prev + 1); // Force re-render
-};
+  const refreshPayRunData = async () => {
+    await fetchPayRunData();
+    setRefreshKey((prev) => prev + 1); // Force re-render
+  };
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbarMessage(message);
@@ -119,13 +121,14 @@ const refreshPayRunData = async () => {
             />
             Process Pay Run
           </Button>
-          <ProcessPayRunModal 
-            open={modalOpen} 
+          <ProcessPayRunModal
+            open={modalOpen}
             onClose={() => setModalOpen(false)}
-            refreshPayRunData={async() => { 
+            refreshPayRunData={async () => {
               await refreshPayRunData();
-              }} 
-            />
+            }}
+            showSnackbar={showSnackbar}
+          />
         </Box>
       </Box>
 
@@ -216,91 +219,108 @@ const refreshPayRunData = async () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredPayRun.map((run) => (
-                    <TableRow
-                      key={run.payRunId}
-                      sx={{
-                        backgroundColor: run.approved
-                          ? theme.palette.custom.lightGreen
-                          : theme.palette.custom.white
-                      }}>
-                      <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                        {run.payRunId}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                        {run.payRunDate}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                        {formatDecimalValue(run.totalPayrollCost)} AED
-                      </TableCell>
-                      <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                        {formatDecimalValue(run.totalPayrollDeductions)} AED
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "flex", flexDirection: "row", padding: 0, margin: 0 }}>
-                          <Link to={`/payrun/${run.payRunId}`} style={{ textDecoration: 'none' }}>
-                            <Button sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}>
-                              <img
-                                src={payRunViewIcon}
-                                alt="View Pay Run"
-                                style={{ width: 24, height: 24 }}
-                              />
-                            </Button>
-                          </Link>
-                          {run.approved ? (
-                            userRole === "Admin" && (
-                              <Button
-                                onClick={() =>
-                                  approvePayrun(run.payRunId, false, true)
-                                    .then(() => {
-                                      fetchPayRunData();
-                                      showSnackbar("Pay run rejected successfully!", "success");
-                                    })
-                                    .catch((err) => {
-                                      console.error(err);
-                                      showSnackbar("Failed to reject pay run.", "error");
-                                    })
-                                }
-                                sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}
-                              >
-                                <img src={payRunRejectIcon} alt="Reject Pay Run" style={{ width: 24, height: 24 }} />
+                  {filteredPayRun?.length ? (
+                    filteredPayRun.map((run) => (
+                      <TableRow
+                        key={run.payRunId}
+                        sx={{
+                          backgroundColor: run.approved
+                            ? theme.palette.custom.lightGreen
+                            : theme.palette.custom.white
+                        }}>
+                        <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                          {run.payRunId}
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                          {run.payRunDate}
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                          {formatDecimalValue(run.totalPayrollCost)} AED
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "1rem", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                          {formatDecimalValue(run.totalPayrollDeductions)} AED
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", flexDirection: "row", padding: 0, margin: 0 }}>
+                            <Link to={`/payrun/${run.payRunId}`} style={{ textDecoration: 'none' }}>
+                              <Button sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}>
+                                <img
+                                  src={payRunViewIcon}
+                                  alt="View Pay Run"
+                                  style={{ width: 24, height: 24 }}
+                                />
                               </Button>
-                            )
-                          ) : (
-                            ["Admin", "Payroll"].includes(userRole) && (
-                              <Button
-                                onClick={() => {
-                                  const existingApproved = payRun.some(
-                                    (p) =>
-                                      p.payRunId !== run.payRunId &&
-                                      p.period.periodStart === run.period.periodStart &&
-                                      p.period.periodEnd === run.period.periodEnd &&
-                                      p.approved
-                                  );
-                                  if (!existingApproved) {
-                                    approvePayrun(run.payRunId, true, false)
+                            </Link>
+                            {run.approved ? (
+                              userRole === "Admin" && (
+                                <Button
+                                  onClick={() => {
+                                    setLoading(true);
+                                    approvePayrun(run.payRunId, false, true)
                                       .then(() => {
                                         fetchPayRunData();
-                                        showSnackbar("Pay run approved successfully!", "success");
+                                        showSnackbar("Pay run rejected successfully!", "success");
                                       })
                                       .catch((err) => {
                                         console.error(err);
-                                        showSnackbar("Failed to approve pay run.", "error");
+                                        showSnackbar("Failed to reject pay run.", "error");
+                                      })
+                                      .finally(() => {
+                                        setLoading(false);
                                       });
-                                  } else {
-                                    showSnackbar("A pay run for this period is already approved.", "warning");
-                                  }
-                                }}
-                                sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}
-                              >
-                                <img src={payRunApproveIcon} alt="Approve Pay Run" style={{ width: 24, height: 24 }} />
-                              </Button>
-                            )
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                  }}
+                                  sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}
+                                >
+                                  <img src={payRunRejectIcon} alt="Reject Pay Run" style={{ width: 24, height: 24 }} />
+                                </Button>
+                              )
+                            ) : (
+                              ["Admin", "Payroll"].includes(userRole) && (
+                                <Button
+                                  onClick={() => {
+                                    const existingApproved = payRun.some(
+                                      (p) =>
+                                        p.payRunId !== run.payRunId &&
+                                        p.period.periodStart === run.period.periodStart &&
+                                        p.period.periodEnd === run.period.periodEnd &&
+                                        p.approved
+                                    );
+                                    if (!existingApproved) {
+                                      setLoading(true);
+                                      approvePayrun(run.payRunId, true, false)
+                                        .then(() => {
+                                          fetchPayRunData();
+                                          showSnackbar("Pay run approved successfully!", "success");
+                                        })
+                                        .catch((err) => {
+                                          console.error(err);
+                                          showSnackbar("Failed to approve pay run.", "error");
+                                        }).finally(() => {
+                                          setLoading(false);
+                                        });
+                                    } else {
+                                      showSnackbar("A pay run for this period is already approved.", "warning");
+                                    }
+                                  }}
+                                  sx={{ backgroundColor: "transparent", border: "none", boxShadow: "none", px: 1 }}
+                                >
+                                  <img src={payRunApproveIcon} alt="Approve Pay Run" style={{ width: 24, height: 24 }} />
+                                </Button>
+                              )
+                            )}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    )))
+                    : (
+                      <TableRow sx={{
+                        backgroundColor: theme.palette.custom.white
+                      }}>
+                        <TableCell colSpan={5}>
+                          <Typography>No pay run records available.</Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
                 </TableBody>
               </Table>
             </Box>
@@ -321,6 +341,7 @@ const refreshPayRunData = async () => {
           </Alert>
         </Snackbar>
       </Paper>
+      <LoadingOverlay open={loading || isLoading} />
     </Box>
   );
 };

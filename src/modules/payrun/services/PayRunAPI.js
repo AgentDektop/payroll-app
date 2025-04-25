@@ -2,6 +2,32 @@ import axios from "axios";
 import { formatDateForAPI } from "../../employee/utils/employeeUtils";
 const PAYRUN_API_URL = "http://localhost:5050/pay-run";
 
+const downloadPayslip = async (payRunId) => {
+  try {
+    const response = await fetch(`${PAYRUN_API_URL}/download-payslip/${payRunId}`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to download payslip");
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.download = `Payslips_${payRunId}.zip`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+
+    downloadLink.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download error:", error);
+  }
+};
+
 const fetchPayRun = async () => {
   const response = await fetch(`${PAYRUN_API_URL}/all`);
   if (!response.ok) {
@@ -47,4 +73,4 @@ const processPayRun = async (startDate, endDate) => {
   }
 };
 
-export { fetchPayRun, fetchPayRunById, approvePayrun, processPayRun}
+export { fetchPayRun, fetchPayRunById, approvePayrun, processPayRun, downloadPayslip }

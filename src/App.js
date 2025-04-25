@@ -15,6 +15,7 @@ import AppPortalPage from './modules/shared/pages/AppPortalPage';
 import { AuthProvider } from './modules/shared/components/AuthContext';
 import TimeAttendancePage from './modules/timeAndAttendance/pages/TimeAndAttendancePage';
 import EmployeeAttendanceDetail from './modules/timeAndAttendance/components/EmployeeAttendanceDetailComponent';
+import DashboardPage from './modules/dashboard/pages/DashboardPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Routes>
             <Route path='/login' element={<LoginPage/>}/>
             <Route path="/" element={<PrivateRoute element={<Sidebar />} />}>
+              <Route path="/" element={<PrivateRoute element={<DashboardPage />} />}/>
               <Route path="/employee/all" element={<PrivateRoute element={<EmployeeListPage />} />}/>
               <Route path="/employee/:id" element={<PrivateRoute element={<EmployeePersonalInfoPage/>} />} />
               <Route path="/time-and-attendance/by-period" element={<PrivateRoute element={<TimeAttendancePage/>}/>} />

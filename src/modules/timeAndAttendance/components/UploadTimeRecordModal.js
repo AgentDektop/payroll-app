@@ -4,146 +4,205 @@ import {
     Box,
     Button,
     Typography,
-    Snackbar,
     Alert,
     TextField,
-    ButtonGroup,
     useTheme,
+    IconButton,
 } from "@mui/material";
+
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { format } from "date-fns";
-import { uploadTimeRecord } from "../services/TimeAndAttendanceAPI"; 
 
-const UploadTimeRecordModal = ({ open, onClose, refreshData }) => {
+import dateIcon from "../../shared/assets/icon/attendance-tab-date-icon.png";
+import CloseIcon from "@mui/icons-material/Close";
+
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
+
+import { format } from "date-fns";
+import { uploadTimeRecord } from "../services/TimeAndAttendanceAPI";
+
+const UploadTimeRecordModal = ({ open, onClose, refreshData, showSnackbar }) => {
     const theme = useTheme();
+
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [file, setFile] = useState(null);
-    const [snackbar, setSnackbar] = useState({
-        open: false,
-        message: "",
-        severity: "warning",
-    });
+    const [alert, setAlert] = useState({ open: false, message: "", severity: "warning" });
+    const [loading, setLoading] = useState(false);
+
+    const resetForm = () => {
+        setStartDate(null);
+        setEndDate(null);
+        setFile(null);
+        setAlert({ open: false, message: "", severity: "warning" });
+        setLoading(false);
+    };
+
+    const handleClose = () => {
+        resetForm();
+        onClose();
+    };
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
     };
 
     const handleUpload = async () => {
+        if (loading) return;
+
         if (!startDate || !endDate) {
-            setSnackbar({
+            setAlert({
                 open: true,
                 message: "Please select a valid start and end date.",
                 severity: "error",
             });
             return;
         }
+
         if (!file) {
-            setSnackbar({
+            setAlert({
                 open: true,
                 message: "Please choose a file.",
                 severity: "error",
             });
             return;
         }
-        const formattedStartDate = format(startDate, "dd-MM-yyyy");
-        const formattedEndDate = format(endDate, "dd-MM-yyyy");
+
+        if (file && file.type !== "text/csv") {
+            setAlert({
+                open: true,
+                message: "Only CSV files are allowed.",
+                severity: "error",
+            });
+            return;
+        }
+
+        const formattedStartDate = format(new Date(startDate), "dd-MM-yyyy");
+        const formattedEndDate = format(new Date(endDate), "dd-MM-yyyy");
+
+        setLoading(true);
 
         try {
             await uploadTimeRecord({ startDate: formattedStartDate, endDate: formattedEndDate, file });
-            setSnackbar({
-                open: true,
-                message: `File uploaded successfully for period: ${formattedStartDate} - ${formattedEndDate}`,
-                severity: "success",
-            });
-            setTimeout(() => {
-                if (refreshData) refreshData();
-                onClose();
-            }, 6000);
+            showSnackbar?.(
+                `File uploaded successfully for period: ${formattedStartDate} - ${formattedEndDate}`,
+                "success"
+            );
+
+            refreshData?.();
+            handleClose();
         } catch (error) {
-            setSnackbar({
-                open: true,
-                message: "Failed to upload file.",
-                severity: "error",
-            });
+            showSnackbar?.("Failed to upload file.", "error");
+        } finally {
+            setLoading(false);
         }
     };
 
+    const textFieldStyles = {
+        mb: 2,
+        "& .MuiInputBase-input": {
+            ...theme.typography.md3
+        },
+        "& .MuiOutlinedInput-root": { borderRadius: 2 },
+        "& label": { color: "#7A7A7A" },
+        "& label.Mui-focused": { color: "#AF8862" },
+        "& .MuiOutlinedInput-root.Mui-focused fieldset": { borderColor: "#AF886230" },
+    };
+
     return (
-        <Modal open={open} onClose={onClose}>
+        <Modal open={open} onClose={handleClose}>
             <Box
                 sx={{
                     width: 400,
-                    bgcolor: "white",
-                    p: 3,
+                    bgcolor: "#FAFBFB",
+                    p: 4,
                     mx: "auto",
-                    my: "20vh",
-                    borderRadius: 2,
+                    my: "15vh",
+                    borderRadius: 3,
+                    boxShadow: 10,
+                    position: "relative",
                 }}
             >
-                <Typography variant="h6" sx={{ mb: 2 }}>
+                {/* Close Button */}
+                <IconButton onClick={handleClose} sx={{ position: "absolute", top: 10, right: 10 }}>
+                    <CloseIcon />
+                </IconButton>
+
+                <Typography variant="h6" fontWeight={600} mb={3}>
                     Upload Time Record
                 </Typography>
 
+                {alert.open && (
+                    <Alert
+                        severity={alert.severity}
+                        onClose={() => setAlert({ ...alert, open: false })}
+                        sx={{
+                            mb: 3,
+                            fontSize: "0.675rem",
+                            py: 0,
+                            px: 1.5,
+                            borderRadius: 1,
+                            alignItems: "center",
+                        }}
+                    >
+                        {alert.message}
+                    </Alert>
+                )}
+
                 {/* Start Date Field */}
-                <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
                     <DatePicker
-                        placeholderText="Select Start Date"
                         selected={startDate}
                         onChange={(date) => setStartDate(date)}
                         dateFormat="dd-MM-yyyy"
-                        customInput={<TextField fullWidth sx={{
-                            py: 0,
-                            "& .MuiInputBase-input::placeholder": {
-                                color: theme.palette.custom.lightGrey,
-                                opacity: 2,
-                                fontSize: "0.875rem"
-                            },
-                            "& .MuiOutlinedInput-root": {
-                                "&:hover .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: theme.palette.custom.lightGrey,
-                                    opacity: 0.2
-                                }
-                            },
-                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                borderColor: theme.palette.custom.lightGrey,
-                            },
-                        }} />}
+                        customInput={
+                            <TextField
+                                label="Period Start Date"
+                                fullWidth
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="Period Start Date" style={{ width: 20, height: 20 }} />
+                                    ),
+                                }}
+                                sx={textFieldStyles}
+                            />
+                        }
                     />
                 </Box>
 
                 {/* End Date Field */}
-                <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
                     <DatePicker
-                        placeholderText="Select End Date"
                         selected={endDate}
                         onChange={(date) => setEndDate(date)}
                         dateFormat="dd-MM-yyyy"
-                        customInput={<TextField fullWidth sx={{
-                            py: 0,
-                            "& .MuiInputBase-input::placeholder": {
-                                color: theme.palette.custom.lightGrey,
-                                opacity: 2,
-                                fontSize: "0.875rem"
-                            },
-                            "& .MuiOutlinedInput-root": {
-                                "&:hover .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: theme.palette.custom.lightGrey,
-                                    opacity: 0.2
-                                }
-                            },
-                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                borderColor: theme.palette.custom.lightGrey,
-                            },
-                        }} />}
+                        customInput={
+                            <TextField
+                                label="Period End Date"
+                                fullWidth
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="Period End Date" style={{ width: 20, height: 20 }} />
+                                    ),
+                                }}
+                                sx={textFieldStyles}
+                            />
+                        }
                     />
                 </Box>
 
-                {/* File upload */}
+                {/* File Upload */}
                 <Box sx={{ display: "flex", flexDirection: "column", mb: 2, alignItems: "center" }}>
-                    <Button fullWidth variant="outlined" component="label">
-                        Choose a file to upload
+                    <Button
+                        fullWidth
+                        variant="outlined"
+                        component="label"
+                        sx={{
+                            borderColor: theme.palette.custom.darkBrown,
+                            backgroundColor: theme.palette.custom.white,
+                            color: theme.palette.custom.darkBrown,
+                        }}>
+                        Choose a .csv file
                         <input type="file" hidden onChange={handleFileChange} />
                     </Button>
                     {file && (
@@ -153,33 +212,26 @@ const UploadTimeRecordModal = ({ open, onClose, refreshData }) => {
                     )}
                 </Box>
 
-                {/* Buttons */}
-                <Box sx={{ mt: 3 }}>
-                    <ButtonGroup fullWidth>
-                        <Button onClick={onClose} color="secondary" variant="outlined">
-                            Cancel
-                        </Button>
-                        <Button onClick={handleUpload} variant="contained" color="primary">
-                            Upload
-                        </Button>
-                    </ButtonGroup>
+                {/* Upload Button */}
+                <Box sx={{ display: "flex", flexDirection: "column", mb: 2, alignItems: "center" }}>
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        onClick={handleUpload}
+                        sx={{
+                            bgcolor: "#693714",
+                            color: "#ffffff",
+                            borderRadius: 2,
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": { bgcolor: "#4b240c" },
+                        }}
+                    >
+                        Upload
+                    </Button>
                 </Box>
 
-                {/* Snackbar for alerts */}
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={6000}
-                    onClose={() => setSnackbar({ ...snackbar, open: false })}
-                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                >
-                    <Alert
-                        onClose={() => setSnackbar({ ...snackbar, open: false })}
-                        severity={snackbar.severity}
-                        sx={{ width: "100%" }}
-                    >
-                        {snackbar.message}
-                    </Alert>
-                </Snackbar>
+                <LoadingOverlay open={loading} />
             </Box>
         </Modal>
     );

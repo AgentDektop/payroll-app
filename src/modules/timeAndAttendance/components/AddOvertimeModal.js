@@ -4,170 +4,208 @@ import {
   Box,
   Button,
   Typography,
-  Snackbar,
   Alert,
   TextField,
-  ButtonGroup,
   useTheme,
+  IconButton,
+  CircularProgress,
 } from "@mui/material";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { format } from "date-fns";
-import { addEmployeeOvertime } from "../services/TimeAndAttendanceAPI"; // Import the API call for adding overtime
-import useAddOvertime from "../hooks/useAddOvertime";
 
-const AddOvertimeModal = ({ open, onClose, documentId, onOvertimeAdded }) => {
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
+import dateIcon from "../../shared/assets/icon/attendance-tab-date-icon.png";
+import overtimeStartEndIcon from "../../shared/assets/icon/attendance-overtime-start-date-icon.png";
+import SaveIcon from "@mui/icons-material/Save";
+import CloseIcon from "@mui/icons-material/Close";
+import DatePicker from "react-datepicker";
+
+import { format } from "date-fns";
+
+import useSubmit from "../hooks/useSubmit";
+import { addEmployeeOvertime } from "../services/TimeAndAttendanceAPI";
+
+const AddOvertimeModal = ({ open, onClose, documentId, onOvertimeAdded, showSnackbar }) => {
   const theme = useTheme();
   const [date, setDate] = useState(null);
   const [overtimeStart, setOvertimeStart] = useState("");
   const [overtimeEnd, setOvertimeEnd] = useState("");
-  const { submitOvertime, loading, error } = useAddOvertime();
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "warning",
-  });
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "warning" });
+
+  const { submit, loading, error } = useSubmit(addEmployeeOvertime);
+
+  const resetForm = () => {
+    setDate(null);
+    setOvertimeStart("");
+    setOvertimeEnd("");
+    setSnackbar({ open: false, message: "", severity: "warning" });
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleSubmit = async () => {
     if (!date || !overtimeStart || !overtimeEnd) {
-      setSnackbar({
-        open: true,
-        message: "Please fill in all fields.",
-        severity: "error",
-      });
-      return;
+      return setSnackbar({ open: true, message: "Please fill in all fields.", severity: "error" });
     }
 
-    const formattedDate = format(date, "dd-MM-yyyy");
     const payload = {
-      id: documentId,          
-      date: formattedDate,     
-      overtimeStart,           
-      overtimeEnd, 
+      id: documentId,
+      date: format(date, "dd-MM-yyyy"),
+      overtimeStart,
+      overtimeEnd,
     };
 
-    console.log("AddOvertimeModal",payload);
-
     try {
-      await addEmployeeOvertime(payload);
-      setSnackbar({
-        open: true,
-        message: "Overtime added successfully.",
-        severity: "success",
-      });
-      setTimeout(() => {
-        if (onOvertimeAdded) onOvertimeAdded();
-        onClose(); 
-      }, 3000);
+      const result = await submit(payload);
+      showSnackbar("Overtime added successfully.", "success");
+      onOvertimeAdded?.(result);
+      handleClose();
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Failed to add overtime.",
-        severity: "error",
-      });
+      showSnackbar("Failed to add overtime.", "error");
     }
   };
 
+  const textFieldStyles = {
+    mb: 2,
+    "& .MuiInputBase-input": {
+      ...theme.typography.md3
+    },
+    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+    "& label": { color: "#7A7A7A" },
+    "& label.Mui-focused": { color: "#AF8862" },
+    "& .MuiOutlinedInput-root.Mui-focused fieldset": { borderColor: "#AF886230" },
+  };
+
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={handleClose}>
       <Box
         sx={{
           width: 400,
-          bgcolor: "white",
-          p: 3,
+          bgcolor: "#FAFBFB",
+          p: 4,
           mx: "auto",
-          my: "20vh",
-          borderRadius: 2,
+          my: "15vh",
+          borderRadius: 3,
+          boxShadow: 10,
+          position: "relative",
         }}
       >
-        <Typography variant="h6" sx={{ mb: 2 }}>
+        {/* Close Button */}
+        <IconButton onClick={handleClose} sx={{ position: "absolute", top: 10, right: 10 }}>
+          <CloseIcon />
+        </IconButton>
+
+        <Typography variant="h6" fontWeight={600} mb={3}>
           Add Overtime
         </Typography>
 
-        <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
+        {snackbar.open && (
+          <Alert
+            severity={snackbar.severity}
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            sx={{
+              mb: 3,
+              fontSize: "0.675rem",
+              py: 0,
+              px: 1.5,
+              borderRadius: 1,
+              alignItems: "center",
+            }}
+          >
+            {snackbar.message}
+          </Alert>
+        )}
+        {/* Overtime Date */}
+        <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
           <DatePicker
-            placeholderText="Select Date"
             selected={date}
             onChange={(newDate) => setDate(newDate)}
             dateFormat="dd-MM-yyyy"
             customInput={
               <TextField
+                label="Overtime Date"
                 fullWidth
-                sx={{
-                  py: 0,
-                  "& .MuiInputBase-input::placeholder": {
-                    color: theme.palette.custom.lightGrey,
-                    opacity: 2,
-                    fontSize: "0.875rem",
-                  },
-                  "& .MuiOutlinedInput-root": {
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: theme.palette.custom.lightGrey,
-                      opacity: 0.2,
-                    },
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: theme.palette.custom.lightGrey,
-                  },
+                InputProps={{
+                  endAdornment: (
+                    <img src={dateIcon} alt="Overtime Date" style={{ width: 20, height: 20 }} />
+                  ),
                 }}
+                sx={textFieldStyles}
               />
             }
           />
         </Box>
 
-        {/* Overtime Start Time */}
-        <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
+        {/* Start and End Time Fields */}
+        <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
           <TextField
             label="Overtime Start"
             type="time"
             fullWidth
             value={overtimeStart}
             onChange={(e) => setOvertimeStart(e.target.value)}
-            inputProps={{ step: 300 }} 
             InputLabelProps={{ shrink: true }}
+            InputProps={{
+              endAdornment: (
+                <img src={overtimeStartEndIcon} alt="Overtime Start" style={{ width: 20, height: 20 }} />
+              ),
+            }}
+            sx={{
+              ...textFieldStyles,
+              "& .MuiInputBase-input": {
+                "&::-webkit-calendar-picker-indicator, &::-webkit-clear-button, &::-webkit-inner-spin-button": {
+                  display: "none"
+                }
+              }
+            }}
           />
         </Box>
-
-        {/* Overtime End Time */}
-        <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
           <TextField
             label="Overtime End"
             type="time"
             fullWidth
             value={overtimeEnd}
             onChange={(e) => setOvertimeEnd(e.target.value)}
-            inputProps={{ step: 300 }}
             InputLabelProps={{ shrink: true }}
+            InputProps={{
+              endAdornment: (
+                <img src={overtimeStartEndIcon} alt="Overtime End" style={{ width: 20, height: 20 }} />
+              ),
+            }}
+            sx={{
+              ...textFieldStyles,
+              "& .MuiInputBase-input": {
+                "&::-webkit-calendar-picker-indicator, &::-webkit-clear-button, &::-webkit-inner-spin-button": {
+                  display: "none"
+                }
+              }
+            }}
           />
         </Box>
 
-        {/* Buttons */}
-        <Box sx={{ mt: 3 }}>
-          <ButtonGroup fullWidth>
-            <Button onClick={onClose} color="secondary" variant="outlined">
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} variant="contained" color="primary">
-              Submit
-            </Button>
-          </ButtonGroup>
-        </Box>
-
-        {/* Snackbar for alerts */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        {/* Save Button */}
+        <Button
+          variant="contained"
+          fullWidth
+          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+          disabled={loading}
+          onClick={handleSubmit}
+          sx={{
+            bgcolor: "#693714",
+            color: "#ffffff",
+            borderRadius: 2,
+            textTransform: "none",
+            fontWeight: 600,
+            "&:hover": { bgcolor: "#4b240c" },
+          }}
         >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            sx={{ width: "100%" }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
+          Save Overtime
+        </Button>
+
+        <LoadingOverlay open={loading} />
       </Box>
     </Modal>
   );

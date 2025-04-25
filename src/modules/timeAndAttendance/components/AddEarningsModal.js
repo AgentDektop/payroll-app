@@ -15,7 +15,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import LoadingOverlay from "../../shared/components/LoadingOverlay";
 import dateIcon from "../../shared/assets/icon/attendance-tab-date-icon.png";
-import timeOffDurationIcon from "../../shared/assets/icon/attendance-timeoff-duration-icon.png";
+import earningsIcon from "../../shared/assets/icon/total-payroll-cost-icon.png";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import DatePicker from "react-datepicker";
@@ -23,33 +23,26 @@ import DatePicker from "react-datepicker";
 import { format } from "date-fns";
 
 import useSubmit from "../hooks/useSubmit";
-import { addEmployeeTimeOff } from "../services/TimeAndAttendanceAPI";
+import { addEmployeeEarnings } from "../services/TimeAndAttendanceAPI";
 
-const timeOffTypes = [
-    { "key": "VACATION_LEAVE", "label": "Vacation Leave" },
-    { "key": "SICK_LEAVE", "label": "Sick Leave" },
-    { "key": "MATERNITY_LEAVE", "label": "Maternity Leave" },
-    { "key": "EMERGENCY_LEAVE", "label": "Emergency Leave" },
-    { "key": "BEREAVEMENT_LEAVE", "label": "Bereavement Leave" },
-    { "key": "LEAVE_WITHOUT_PAY", "label": "Leave without Pay" },
-    { "key": "OFFSET", "label": "Offset" }
+const earningTypes = [
+    { "key": "HOLIDAY", "label": "Holiday" },
+    { "key": "CANCELLED_OFF", "label": "Cancelled Off" }
 ];
 
-const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackbar }) => {
+const AddEarningsModal = ({ open, onClose, documentId, onEarningsAdded, showSnackbar }) => {
     const theme = useTheme();
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
-    const [timeOffDuration, setTimeOffDuration] = useState("");
-    const [selectedTimeOffType, setSelectedTimeOffType] = useState("");
+    const [date, setDate] = useState(null);
+    const [selectedEarningType, setSelectedEarningType] = useState("");
+    const [totalEarnings, setTotalEarnings] = useState("");
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "warning" });
 
-    const { submit, loading, error } = useSubmit(addEmployeeTimeOff);
+    const { submit, loading, error } = useSubmit(addEmployeeEarnings);
 
     const resetForm = () => {
-        setStartDate(null);
-        setEndDate(null);
-        setTimeOffDuration("");
-        setSelectedTimeOffType("");
+        setDate(null);
+        setSelectedEarningType("");
+        setTotalEarnings("");
         setSnackbar({ open: false, message: "", severity: "warning" });
     };
 
@@ -59,25 +52,24 @@ const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackb
     };
 
     const handleSubmit = async () => {
-        if (!startDate || !endDate || !timeOffDuration || !selectedTimeOffType) {
+        if (!date || !selectedEarningType || !totalEarnings) {
             return setSnackbar({ open: true, message: "Please fill in all fields.", severity: "error" });
         }
 
         const payload = {
             id: documentId,
-            timeOffType: selectedTimeOffType,
-            timeOffStartDate: format(startDate, "dd-MM-yyyy"),
-            timeOffEndDate: format(endDate, "dd-MM-yyyy"),
-            timeOffDuration: parseFloat(timeOffDuration),
+            date: format(date, "dd-MM-yyyy"),
+            earningsType: selectedEarningType,
+            earningsTotal: parseFloat(totalEarnings)
         };
 
         try {
             const result = await submit(payload);
-            showSnackbar("Time off added successfully.", "success");
-            onTimeOffAdded?.(result);
+            showSnackbar("Earnings added successfully.", "success");
+            onEarningsAdded?.(result);
             handleClose();
         } catch (error) {
-            showSnackbar("Failed to add time off.", "error");
+            showSnackbar("Failed to add earnings.", "error");
         }
     };
 
@@ -112,7 +104,7 @@ const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackb
                 </IconButton>
 
                 <Typography variant="h6" fontWeight={600} mb={3}>
-                    Add Time Off
+                    Add Earnings
                 </Typography>
 
                 {snackbar.open && (
@@ -133,15 +125,35 @@ const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackb
                 )}
 
                 <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
+                    <DatePicker
+                        selected={date}
+                        onChange={(d) => setDate(d)}
+                        dateFormat="dd-MM-yyyy"
+                        customInput={
+                            <TextField
+                                label="Date"
+                                fullWidth
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="Date" style={{ width: 20, height: 20 }} />
+                                    ),
+                                }}
+                                sx={textFieldStyles}
+                            />
+                        }
+                    />
+                </Box>
+
+                <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
                     <TextField
-                        label="Leave Type"
+                        label="Type"
                         select
                         fullWidth
-                        value={selectedTimeOffType}
-                        onChange={(e) => setSelectedTimeOffType(e.target.value)}
+                        value={selectedEarningType}
+                        onChange={(e) => setSelectedEarningType(e.target.value)}
                         sx={textFieldStyles}
                     >
-                        {timeOffTypes.map((type) => (
+                        {earningTypes.map((type) => (
                             <MenuItem key={type.key} value={type.key}>
                                 {type.label}
                             </MenuItem>
@@ -150,52 +162,12 @@ const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackb
                 </Box>
 
                 <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
-                    <DatePicker
-                        selected={startDate}
-                        onChange={(d) => setStartDate(d)}
-                        dateFormat="dd-MM-yyyy"
-                        customInput={
-                            <TextField
-                                label="Time Off Start"
-                                fullWidth
-                                InputProps={{
-                                    endAdornment: (
-                                        <img src={dateIcon} alt="Time Off Start" style={{ width: 20, height: 20 }} />
-                                    ),
-                                }}
-                                sx={textFieldStyles}
-                            />
-                        }
-                    />
-                </Box>
-
-                <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
-                    <DatePicker
-                        selected={endDate}
-                        onChange={(d) => setEndDate(d)}
-                        dateFormat="dd-MM-yyyy"
-                        customInput={
-                            <TextField
-                                label="Time Off End"
-                                fullWidth
-                                InputProps={{
-                                    endAdornment: (
-                                        <img src={dateIcon} alt="Time Off End" style={{ width: 20, height: 20 }} />
-                                    ),
-                                }}
-                                sx={textFieldStyles}
-                            />
-                        }
-                    />
-                </Box>
-
-                <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
                     <TextField
-                        label="Time Off Duration"
+                        label="Earnings (Hours)"
                         type="number"
                         fullWidth
-                        value={timeOffDuration}
-                        onChange={(e) => setTimeOffDuration(e.target.value)}
+                        value={totalEarnings}
+                        onChange={(e) => setTotalEarnings(e.target.value)}
                         sx={{
                             ...textFieldStyles,
                             "& input[type=number]": {
@@ -208,7 +180,7 @@ const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackb
                         }}
                         InputProps={{
                             endAdornment: (
-                                <img src={timeOffDurationIcon} alt="Time Off Duration" style={{ width: 20, height: 20 }} />
+                                <img src={earningsIcon} alt="Earnings" style={{ width: 20, height: 20 }} />
                             ),
                         }}
                     />
@@ -230,7 +202,7 @@ const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackb
                         "&:hover": { bgcolor: "#4b240c" },
                     }}
                 >
-                    Save Time Off
+                    Save Earnings
                 </Button>
 
                 <LoadingOverlay open={loading} />
@@ -239,4 +211,4 @@ const AddTimeOffModal = ({ open, onClose, documentId, onTimeOffAdded, showSnackb
     );
 };
 
-export default AddTimeOffModal;
+export default AddEarningsModal;

@@ -14,10 +14,23 @@ import {
     Button,
     useTheme,
     Avatar,
+    IconButton,
+    Tooltip,
+    TextField,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    MenuItem,
+    Alert,
+    Snackbar
 } from "@mui/material";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { ArrowBack } from "@mui/icons-material";
-import { formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
+import { format } from "date-fns";
+import { formatDuration, parseDateString } from "../../shared/utils/dateAndNumberUtils";
 import separatorIcon from "../../shared/assets/icon/vertical-line-separator.png";
 import lineIcon from "../../shared/assets/icon/attendance-line-icon.png";
 import dateIcon from "../../shared/assets/icon/attendance-tab-date-icon.png";
@@ -27,8 +40,10 @@ import hoursWorkedIcon from "../../shared/assets/icon/attendance-tab-hours-worke
 import tardinessIcon from "../../shared/assets/icon/attendance-tab-tardiness-icon.png";
 import overtimeHoursIcon from "../../shared/assets/icon/attendance-overtime-hours-icon.png";
 import overtimeStartEndIcon from "../../shared/assets/icon/attendance-overtime-start-date-icon.png";
-import timeOffTypeDurationIcon from "../../shared/assets/icon/attendance-timeoff-time-type-icon.png";
-import timeOffDateIcon from "../../shared/assets/icon/attendance-timeoff-start-date-icon.png";
+import typeIcon from "../../shared/assets/icon/type-column-icon.png";
+import startDateIcon from "../../shared/assets/icon/start-date-column-icon.png";
+import endDateIcon from "../../shared/assets/icon/end-date-column-icon.png";
+import timeOffDurationIcon from "../../shared/assets/icon/attendance-timeoff-duration-icon.png";
 import actionIcon from "../../shared/assets/icon/attendance-tab-action-icon.png";
 import attendanceTabSelectedIcon from "../../shared/assets/icon/attendance-tab-selected-icon.png";
 import attendanceTabIcon from "../../shared/assets/icon/attendance-tab-icon.png";
@@ -36,25 +51,830 @@ import overtimeTabSelectedIcon from "../../shared/assets/icon/attendance-overtim
 import overtimeTabIcon from "../../shared/assets/icon/attendance-overtime-tab-icon.png";
 import timeOffTabSelectedIcon from "../../shared/assets/icon/attendance-timeoff-tab-selected-icon.png";
 import timeOffTabIcon from "../../shared/assets/icon/attendance-timeoff-tab-icon.png";
+import additionalEarningsTabSelectedIcon from "../../shared/assets/icon/attendance-additional-earnings-tab-selected-icon.png";
+import additionalEarningsTabIcon from "../../shared/assets/icon/attendance-additional-earnings-tab-icon.png";
+import deductionsTabSelectedIcon from "../../shared/assets/icon/attendance-deductions-tab-selected-icon.png";
+import deductionsTabIcon from "../../shared/assets/icon/attendance-deductions-tab-icon.png";
+import descriptionIcon from "../../shared/assets/icon/description-column-icon.png";
+import deductionAmountIcon from "../../shared/assets/icon/deduction-amount-column-icon.png";
 import addIcon from "../../shared/assets/icon/attendance-add-icon.png";
+import totalEarningsIcon from "../../shared/assets/icon/total-payroll-cost-icon.png";
+import breakIcon from "../../shared/assets/icon/attendance-break-icon.png";
+import breakTimeIcon from "../../shared/assets/icon/attendance-break-time-icon.png";
+import editIcon from "../../shared/assets/icon/attendance-edit-icon.png";
+import deleteIcon from "../../shared/assets/icon/attendance-delete-icon.png";
+import saveIcon from "../../shared/assets/icon/attendance-save-icon.png";
+import cancelIcon from "../../shared/assets/icon/attendance-cancel-icon.png";
 import AddOvertimeModal from "./AddOvertimeModal";
 import AddTimeOffModal from "./AddTimeOffModal";
+import AddEarningsModal from "./AddEarningsModal";
+import AddDeductionModal from "./AddDeductionModal";
+import useSubmit from "../hooks/useSubmit";
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
+import { updateEmployeeAttendance, deleteEmployeeAttendance, updateEmployeeOvertime, deleteEmployeeOvertime, updateEmployeeTimeOff, deleteEmployeeTimeOff, updateEmployeeEarnings, deleteEmployeeEarnings, updateEmployeeDeduction, deleteEmployeeDeduction } from "../services/TimeAndAttendanceAPI";
 
-const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData }) => {
+const earningTypes = [
+    { "key": "HOLIDAY", "label": "Holiday" },
+    { "key": "CANCELLED_OFF", "label": "Cancelled Off" }
+];
+
+const deductionTypes = [
+    { "key": "CASH_ADVANCE", "label": "Cash Advance" },
+    { "key": "FINES", "label": "Fines" }
+];
+
+const timeOffTypes = [
+    { "key": "VACATION_LEAVE", "label": "Vacation Leave" },
+    { "key": "SICK_LEAVE", "label": "Sick Leave" },
+    { "key": "MATERNITY_LEAVE", "label": "Maternity Leave" },
+    { "key": "EMERGENCY_LEAVE", "label": "Emergency Leave" },
+    { "key": "BEREAVEMENT_LEAVE", "label": "Bereavement Leave" },
+    { "key": "LEAVE_WITHOUT_PAY", "label": "Leave without Pay" },
+    { "key": "OFFSET", "label": "Offset" }
+];
+
+const EmployeeAttendanceDetail = () => {
     const [activeTab, setActiveTab] = useState(0);
+    const [editingRowId, setEditingRowId] = useState(null);
+    const [editedData, setEditedData] = useState({});
+    const [rowToDelete, setRowToDelete] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [openModal, setOpenModal] = useState(false);
+    const [deleteCallback, setDeleteCallback] = useState(() => { });
+    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success"});
+
     const navigate = useNavigate();
-    const theme = useTheme();
     const location = useLocation();
+    const theme = useTheme();
+
     const [searchParams] = useSearchParams();
-    const [open, setOpen] = useState(false);
     const formattedStartDate = searchParams.get("startDate");
     const formattedEndDate = searchParams.get("endDate");
 
-    const employee = location.state?.employee;
+    const useSaveAttendance = useSubmit(updateEmployeeAttendance);
+    const useDeleteAttendance = useSubmit(deleteEmployeeAttendance);
+    const useSaveOvertime = useSubmit(updateEmployeeOvertime);
+    const useDeleteOvertime = useSubmit(deleteEmployeeOvertime);
+    const useSaveTimeOff = useSubmit(updateEmployeeTimeOff);
+    const useDeleteTimeOff = useSubmit(deleteEmployeeTimeOff);
+    const useSaveEarnings = useSubmit(updateEmployeeEarnings);
+    const useDeleteEarnings = useSubmit(deleteEmployeeEarnings);
+    const useSaveDeduction = useSubmit(updateEmployeeDeduction);
+    const useDeleteDeduction = useSubmit(deleteEmployeeDeduction);
+
+    const [employee, setEmployee] = useState(location.state?.employee);
     const attendance = employee.attendance || {};
     const overtime = employee.overtime || {};
     const timeOff = employee.timeOff || {};
+    const additionalEarnings = employee.additionalEarnings || {};
+    const deductions = employee.deductions || {};
     const documentId = employee._id;
+
+    const isEditing = (row) => editingRowId === row._id;
+
+    const handleTabChange = (event, newValue) => setActiveTab(newValue);
+
+    const handleSubmitSuccess = (newRecord) => {
+        setEmployee(newRecord);
+    };
+
+    const handleEdit = (row) => {
+        setEditingRowId(row._id);
+        setEditedData({ ...row });
+    };
+
+    const handleDelete = (row, deleteCallback) => {
+        setDeleteCallback(() => deleteCallback);
+        setRowToDelete(row);
+        setOpenDialog(true);
+    };
+
+    const handleSave = async (saveCallback) => {
+        try {
+            const result = await saveCallback({ ...editedData, documentId });
+            showSnackbar("Changes saved successfully.", "success");
+            handleSubmitSuccess(result);
+        } catch (error) {
+            showSnackbar("Something went wrong while saving.", "error");
+        } finally {
+            setEditingRowId(null);
+            setEditedData({});
+        }
+    };
+
+    const handleCancel = () => {
+        setEditingRowId(null);
+        setEditedData({});
+    };
+
+    const handleShiftChange = (key, value) => {
+        const updatedShift = { ...editedData.shift, [key]: value };
+        setEditedData((prev) => ({ ...prev, shift: updatedShift }));
+    };
+
+    const handleTimeEntryChange = (entryIndex, key, value) => {
+        const updatedEntries = [...editedData.timeEntries];
+        updatedEntries[entryIndex][key] = value;
+        setEditedData((prev) => ({ ...prev, timeEntries: updatedEntries }));
+    };
+
+    const handleValueChange = (key, value, isNumber = false) => {
+        setEditedData((prev) => ({ ...prev, [key]: isNumber ? Number(value) : value }));
+    };
+
+    const handleDateChange = (key, date) => {
+        setEditedData((prev) => ({ ...prev, [key]: format(date, "dd-MM-yyyy") }));
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!rowToDelete || !deleteCallback) return;
+
+        try {
+            const result = await deleteCallback({ ...rowToDelete, documentId });
+            showSnackbar("Deleted successfully.", "success");
+            handleSubmitSuccess(result);
+            setOpenDialog(false);
+            setRowToDelete(null);
+        } catch (error) {
+            showSnackbar("Something went wrong while deleting.", "error");
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setOpenDialog(false);
+    };
+
+    const showSnackbar = (message, severity = "success") => {
+        setSnackbar({ open: true, message, severity });
+    };
+
+    const getLoadingForTab = (tabIndex) => {
+        switch (tabIndex) {
+            case 0: 
+                return useSaveAttendance.loading || useDeleteAttendance.loading;
+            case 1: 
+                return useSaveOvertime.loading || useDeleteOvertime.loading;
+            case 2: 
+                return useSaveTimeOff.loading || useDeleteTimeOff.loading;
+            case 3: 
+                return useSaveEarnings.loading || useDeleteEarnings.loading;
+            case 4: 
+                return useSaveDeduction.loading || useDeleteDeduction.loading;
+            default:
+                return false;
+        }
+    };
+
+    const summaryByTab = {
+        0: [
+            { label: "Total Hours Worked", value: formatDuration(employee.totalHoursWorked) },
+            { label: "Total Tardiness", value: formatDuration(employee.totalTardiness) },
+            { label: "Total Undertime", value: formatDuration(employee.totalUndertime) },
+            { label: "Conflict", value: employee.totalConflict || "-" },
+        ],
+        1: [
+            { label: "Total Overtime", value: formatDuration(employee.totalOvertime) || "-" },
+        ],
+        2: [
+            { label: "Annual Paid Time Off", value: "-" },
+            { label: "Time Off Used", value: "-" },
+            { label: "Remaining Time Off", value: "-" },
+        ],
+        3: [
+            { label: "Total Earnings", value: formatDuration(employee.totalAdditionalEarnings) || "-" },
+        ],
+        4: [
+            { label: "Total Deductions", value: `${employee.totalDeduction} AED` || "-" },
+        ],
+    };
+
+    const tabs = [
+        {
+            label: "Attendance",
+            icon: attendanceTabIcon,
+            selectedIcon: attendanceTabSelectedIcon,
+        },
+        {
+            label: "Overtime",
+            icon: overtimeTabIcon,
+            selectedIcon: overtimeTabSelectedIcon,
+        },
+        {
+            label: "Time Off",
+            icon: timeOffTabIcon,
+            selectedIcon: timeOffTabSelectedIcon,
+        },
+        {
+            label: "Addt'l Earnings",
+            icon: additionalEarningsTabIcon,
+            selectedIcon: additionalEarningsTabSelectedIcon,
+        },
+        {
+            label: "Addt'l Deductions",
+            icon: deductionsTabIcon,
+            selectedIcon: deductionsTabSelectedIcon,
+        },
+    ];
+
+    const actionLabels = {
+        1: "Add Overtime",
+        2: "Add Time Off",
+        3: "Add Earnings",
+        4: "Add Deduction",
+    };
+
+    const renderActions = ({ saveCallback = () => { }, deleteCallback = () => { }, } = {}) => (
+        (row) => (
+            <Box sx={{ display: "flex", gap: 1 }}>
+                {isEditing(row) ? (
+                    <>
+                        <Tooltip title="Save">
+                            <IconButton onClick={() => handleSave(saveCallback)} size="small">
+                                <img src={saveIcon} alt="Save" width={18} height={18} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Cancel">
+                            <IconButton onClick={handleCancel} size="small">
+                                <img src={cancelIcon} alt="Cancel" width={18} height={18} />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                ) : (
+                    <>
+                        <Tooltip title="Edit">
+                            <IconButton onClick={() => handleEdit(row)} size="small">
+                                <img src={editIcon} alt="Edit" width={18} height={18} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                            <IconButton onClick={() => handleDelete(row, deleteCallback)} size="small">
+                                <img src={deleteIcon} alt="Delete" width={18} height={18} />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
+            </Box>
+        )
+    );
+
+    const attendanceColumns = [
+        {
+            label: "Date",
+            icon: dateIcon,
+            render: (row) => <Typography variant="sm2">{row.date}</Typography>
+        },
+        {
+            label: "Shift",
+            icon: shiftIcon,
+            render: (row) =>
+                isEditing(row)
+                    ?
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <TextField size="small" variant="outlined" sx={{ maxWidth: 100, "& .MuiInputBase-input": { ...theme.typography.sm4 } }} placeholder="Start" defaultValue={editedData.shift?.shiftStart || ""} onBlur={(e) => handleShiftChange("shiftStart", e.target.value)} />
+                        <Typography variant="sm2" sx={{ display: 'flex', alignItems: 'center' }}>-</Typography>
+                        <TextField size="small" variant="outlined" sx={{ maxWidth: 100, "& .MuiInputBase-input": { ...theme.typography.sm4 } }} placeholder="End" defaultValue={editedData.shift?.shiftEnd || ""} onBlur={(e) => handleShiftChange("shiftEnd", e.target.value)} />
+                    </Box>
+                    :
+                    <Typography variant="sm2">{row.shift.shiftStart} - {row.shift.shiftEnd}</Typography>
+        },
+        {
+            label: "Break Time",
+            icon: breakTimeIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <TextField
+                        type="number"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            maxWidth: 100,
+                            "& .MuiInputBase-input": { ...theme.typography.sm4 },
+                            "& input[type=number]": {
+                                MozAppearance: "textfield",
+                            },
+                            "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
+                                WebkitAppearance: "none",
+                                margin: 0,
+                            },
+                        }}
+                        defaultValue={editedData.breakDuration || ""}
+                        onBlur={(e) => handleValueChange("breakDuration", e.target.value, true)}
+                    />
+                    :
+                    <Typography variant="sm2">{formatDuration(row.breakDuration) || "-"}</Typography>
+        },
+        {
+            label: "Clock-in & out",
+            icon: clockInIcon,
+            render: (row) =>
+                isEditing(row)
+                    ?
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {editedData.timeEntries?.map((entry, i) => (
+                            <Box key={entry._id} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Typography variant="sm2">{entry.clockIn}</Typography>
+                                <img src={lineIcon} alt="-" style={{ width: 100, height: 10 }} />
+                                <TextField size="small" variant="outlined" sx={{ maxWidth: 100, "& .MuiInputBase-input": { ...theme.typography.sm4 } }} placeholder="Clock Out" defaultValue={entry.clockOut || ""} onBlur={(e) => handleTimeEntryChange(i, "clockOut", e.target.value)} />
+                            </Box>
+                        ))}
+                    </Box>
+                    :
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {row.timeEntries?.map((entry) => (
+                            <Box key={entry._id} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Typography variant="sm2">{entry.clockIn}</Typography>
+                                <img src={lineIcon} alt="-" style={{ width: 100, height: 10 }} />
+                                <Typography variant="sm2" sx={{ color: entry.clockOut ? "inherit" : theme.palette.error.main }}>
+                                    {entry.clockOut || "-"}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+        },
+        {
+            label: "Hours Worked",
+            icon: hoursWorkedIcon,
+            render: row => <Typography variant="sm2">{formatDuration(row.hoursWorked)}</Typography>
+        },
+        {
+            label: "Tardiness",
+            icon: tardinessIcon,
+            render: row => <Typography variant="sm2">{formatDuration(row.tardiness) || "-"}</Typography>
+        },
+        {
+            label: "Undertime",
+            icon: tardinessIcon,
+            render: row => <Typography variant="sm2">{formatDuration(row.undertime) || "-"}</Typography>
+        },
+        {
+            label: "Hours on Break",
+            icon: breakIcon,
+            render: row => <Typography variant="sm2">{formatDuration(row.hoursOnBreak) || "-"}</Typography>
+        },
+        {
+            label: "Actions",
+            icon: actionIcon,
+            render: renderActions({ saveCallback: useSaveAttendance.submit, deleteCallback: useDeleteAttendance.submit })
+        }
+    ];
+
+    const overtimeColumns = [
+        {
+            label: "Date",
+            icon: dateIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <DatePicker
+                        selected={
+                            typeof editedData.date === "string"
+                                ? parseDateString(editedData.date)
+                                : editedData.date || new Date()
+                        }
+                        onChange={(newDate) => handleDateChange("date", newDate)}
+                        dateFormat="dd-MM-yyyy"
+                        customInput={
+                            <TextField
+                                size="small"
+                                fullWidth
+                                sx={{ maxWidth: 140, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="Date" style={{ width: 18, height: 18 }} />
+                                    )
+                                }}
+                            />
+                        }
+                    />
+                    :
+                    <Typography variant="sm2">{row.date}</Typography>
+        },
+        {
+            label: "Overtime start & end",
+            icon: overtimeStartEndIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <TextField
+                            size="small"
+                            variant="outlined"
+                            sx={{ maxWidth: 100, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                            placeholder="Overtime Start"
+                            defaultValue={editedData.overtimeStart || ""}
+                            onBlur={(e) => handleValueChange("overtimeStart", e.target.value)}
+                        />
+                        <img src={lineIcon} alt="-" style={{ width: 100, height: 10 }} />
+                        <TextField
+                            size="small"
+                            variant="outlined"
+                            sx={{ maxWidth: 100, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                            placeholder="Overtime End"
+                            defaultValue={editedData.overtimeEnd || ""}
+                            onBlur={(e) => handleValueChange("overtimeEnd", e.target.value)}
+                        />
+                    </Box>
+                    :
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="sm2">{row.overtimeStart}</Typography>
+                        <img src={lineIcon} alt="-" style={{ width: 100, height: 10 }} />
+                        <Typography variant="sm2">{row.overtimeEnd || "-"}</Typography>
+                    </Box>
+        },
+        {
+            label: "Overtime Hours",
+            icon: overtimeHoursIcon,
+            render: row => <Typography variant="sm2">{formatDuration(row.overtimeHours)}</Typography>
+        },
+        {
+            label: "Actions",
+            icon: actionIcon,
+            render: renderActions({ saveCallback: useSaveOvertime.submit, deleteCallback: useDeleteOvertime.submit })
+        }
+    ];
+
+    const timeOffColumns = [
+        {
+            label: "Type",
+            icon: typeIcon,
+            render: row => <Typography variant="sm2">{timeOffTypes.find(t => t.key === row.timeOffType)?.label || row.timeOffType}</Typography>
+        },
+        {
+            label: "Start Date",
+            icon: startDateIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <DatePicker
+                        selected={
+                            typeof editedData.timeOffStartDate === "string"
+                                ? parseDateString(editedData.timeOffStartDate)
+                                : editedData.timeOffStartDate || new Date()
+                        }
+                        onChange={(newDate) => handleDateChange("timeOffStartDate", newDate)}
+                        dateFormat="dd-MM-yyyy"
+                        customInput={
+                            <TextField
+                                size="small"
+                                fullWidth
+                                sx={{ maxWidth: 140, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="Start Date" style={{ width: 18, height: 18 }} />
+                                    )
+                                }}
+                            />
+                        }
+                    />
+                    :
+                    <Typography variant="sm2">{row.timeOffStartDate}</Typography>
+        },
+        {
+            label: "End Date",
+            icon: endDateIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <DatePicker
+                        selected={
+                            typeof editedData.timeOffEndDate === "string"
+                                ? parseDateString(editedData.timeOffEndDate)
+                                : editedData.timeOffEndDate || new Date()
+                        }
+                        onChange={(newDate) => handleDateChange("timeOffEndDate", newDate)}
+                        dateFormat="dd-MM-yyyy"
+                        customInput={
+                            <TextField
+                                size="small"
+                                fullWidth
+                                sx={{ maxWidth: 140, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="End Date" style={{ width: 18, height: 18 }} />
+                                    )
+                                }}
+                            />
+                        }
+                    />
+                    :
+                    <Typography variant="sm2">{row.timeOffEndDate}</Typography>
+        },
+        {
+            label: "Duration (Days)",
+            icon: timeOffDurationIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <TextField
+                        type="number"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            maxWidth: 100,
+                            "& .MuiInputBase-input": { ...theme.typography.sm4 },
+                            "& input[type=number]": {
+                                MozAppearance: "textfield",
+                            },
+                            "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
+                                WebkitAppearance: "none",
+                                margin: 0,
+                            },
+                        }}
+                        defaultValue={editedData.timeOffDuration || ""}
+                        onBlur={(e) => handleValueChange("timeOffDuration", e.target.value, true)}
+                    />
+                    :
+                    <Typography variant="sm2">{`${row.timeOffDuration}d`}</Typography>
+        },
+        {
+            label: "Actions",
+            icon: actionIcon,
+            render: renderActions({ saveCallback: useSaveTimeOff.submit, deleteCallback: useDeleteTimeOff.submit })
+        },
+    ];
+
+    const additionalEarningsColumns = [
+        {
+            label: "Date",
+            icon: dateIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <DatePicker
+                        selected={
+                            typeof editedData.date === "string"
+                                ? parseDateString(editedData.date)
+                                : editedData.date || new Date()
+                        }
+                        onChange={(newDate) => handleDateChange("date", newDate)}
+                        dateFormat="dd-MM-yyyy"
+                        customInput={
+                            <TextField
+                                size="small"
+                                fullWidth
+                                sx={{ maxWidth: 140, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="Date" style={{ width: 18, height: 18 }} />
+                                    )
+                                }}
+                            />
+                        }
+                    />
+                    :
+                    <Typography variant="sm2">{row.date}</Typography>
+        },
+        {
+            label: "Type",
+            icon: typeIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <TextField
+                        select
+                        size="small"
+                        variant="outlined"
+                        fullWidth
+                        value={editedData.earningsType || ""}
+                        onChange={(e) => handleValueChange("earningsType", e.target.value)}
+                        sx={{ maxWidth: 140, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                    >
+                        {earningTypes.map((type) => (
+                            <MenuItem key={type.key} value={type.key}>
+                                {type.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                    :
+                    <Typography variant="sm2">{earningTypes.find(t => t.key === row.earningsType)?.label || row.earningsType}</Typography>
+        },
+        {
+            label: "Earnings (Hours)",
+            icon: totalEarningsIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <TextField
+                        type="number"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            maxWidth: 100,
+                            "& .MuiInputBase-input": { ...theme.typography.sm4 },
+                            "& input[type=number]": {
+                                MozAppearance: "textfield",
+                            },
+                            "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
+                                WebkitAppearance: "none",
+                                margin: 0,
+                            },
+                        }}
+                        defaultValue={editedData.earningsTotal || ""}
+                        onBlur={(e) => handleValueChange("earningsTotal", e.target.value, true)}
+                    />
+                    :
+                    <Typography variant="sm2">{formatDuration(row.earningsTotal)}</Typography>
+        },
+        {
+            label: "Actions",
+            icon: actionIcon,
+            render: renderActions({ saveCallback: useSaveEarnings.submit, deleteCallback: useDeleteEarnings.submit })
+        },
+    ];
+
+    const deductionsColumns = [
+        {
+            label: "Date",
+            icon: dateIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <DatePicker
+                        selected={
+                            typeof editedData.date === "string"
+                                ? parseDateString(editedData.date)
+                                : editedData.date || new Date()
+                        }
+                        onChange={(newDate) => handleDateChange("date", newDate)}
+                        dateFormat="dd-MM-yyyy"
+                        customInput={
+                            <TextField
+                                size="small"
+                                fullWidth
+                                sx={{ maxWidth: 140, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <img src={dateIcon} alt="Date" style={{ width: 18, height: 18 }} />
+                                    )
+                                }}
+                            />
+                        }
+                    />
+                    :
+                    <Typography variant="sm2">{row.date}</Typography>
+        },
+        {
+            label: "Type",
+            icon: typeIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <TextField
+                        select
+                        size="small"
+                        variant="outlined"
+                        fullWidth
+                        value={editedData.deductionType || ""}
+                        onChange={(e) => handleValueChange("deductionType", e.target.value)}
+                        sx={{ maxWidth: 140, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
+                    >
+                        {deductionTypes.map((type) => (
+                            <MenuItem key={type.key} value={type.key}>
+                                {type.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                    :
+                    <Typography variant="sm2">{deductionTypes.find(t => t.key === row.deductionType)?.label || row.deductionType} </Typography>
+        },
+        {
+            label: "Description",
+            icon: descriptionIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <TextField
+                        type="text"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            maxWidth: 140,
+                            "& .MuiInputBase-input": { ...theme.typography.sm4 },
+                        }}
+                        defaultValue={editedData.deductionDescription || ""}
+                        onBlur={(e) => handleValueChange("deductionDescription", e.target.value)}
+                    />
+                    :
+                    <Typography variant="sm2">{row.deductionDescription}</Typography>
+        },
+        {
+            label: "Amount (AED)",
+            icon: deductionAmountIcon,
+            render: row =>
+                isEditing(row)
+                    ?
+                    <TextField
+                        type="number"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            maxWidth: 100,
+                            "& .MuiInputBase-input": { ...theme.typography.sm4 },
+                            "& input[type=number]": {
+                                MozAppearance: "textfield",
+                            },
+                            "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
+                                WebkitAppearance: "none",
+                                margin: 0,
+                            },
+                        }}
+                        defaultValue={editedData.deductionAmount || ""}
+                        onBlur={(e) => handleValueChange("deductionAmount", e.target.value, true)}
+                    />
+                    :
+                    <Typography variant="sm2">{`${row.deductionAmount} AED`}</Typography>
+        },
+        {
+            label: "Actions",
+            icon: actionIcon,
+            render: renderActions({ saveCallback: useSaveDeduction.submit, deleteCallback: useDeleteDeduction.submit })
+        }
+    ];
+
+    const HeaderCell = ({ icon, label }) => (
+        <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <img src={icon} alt={label} style={{ width: 24, height: 24 }} />
+                <Typography variant="md3">{label}</Typography>
+            </Box>
+        </TableCell>
+    );
+
+    const DataCell = ({ children }) => (
+        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+            {children}
+        </TableCell>
+    );
+
+    const DataTable = ({ columns, data, noDataMessage }) => (
+        <TableContainer sx={{ flexGrow: 1 }}>
+            <Table stickyHeader sx={{ width: "100%" }}>
+                <TableHead>
+                    <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
+                        {columns.map((col, index) => (
+                            <HeaderCell key={index} icon={col.icon} label={col.label} />
+                        ))}
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {
+                        data?.length
+                            ?
+                            data.map((row, rowIndex) => (
+                                <TableRow key={rowIndex}>
+                                    {columns.map((col, colIndex) => (
+                                        <DataCell key={colIndex}>
+                                            {col.render(row)}
+                                        </DataCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                            :
+                            <TableRow>
+                                <TableCell colSpan={columns.length}>
+                                    <Typography>{noDataMessage}</Typography>
+                                </TableCell>
+                            </TableRow>
+                    }
+                </TableBody>
+            </Table>
+            {ConfirmDialog}
+        </TableContainer>
+    );
+
+    const ConfirmDialog = (
+        <Dialog open={openDialog} onClose={handleCancelDelete}>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogContent>
+                <Typography variant="sm3">Are you sure you want to delete this record?</Typography>
+            </DialogContent>
+            <DialogActions>
+                <Button
+                    onClick={handleCancelDelete}
+                    variant="outlined"
+                    sx={{
+                        borderColor: theme.palette.custom.darkBrown,
+                        backgroundColor: theme.palette.custom.white,
+                        color: theme.palette.custom.darkBrown,
+                    }}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    onClick={handleConfirmDelete}
+                    variant="contained"
+                    sx={{
+                        borderColor: theme.palette.custom.darkBrown,
+                        backgroundColor: theme.palette.custom.darkBrown,
+                        color: theme.palette.custom.white,
+                    }}
+                >
+                    Confirm
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
 
     if (!employee) {
         return (
@@ -63,10 +883,6 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
             </Box>
         );
     }
-
-    const handleChange = (event, newValue) => {
-        setActiveTab(newValue);
-    };     
 
     return (
         <Box
@@ -86,154 +902,70 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                 sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-start",
                     width: "90%",
                     maxWidth: 1400,
                     mb: 2,
+                    gap: 2,
                 }}
             >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Button
-                        onClick={() =>
-                            navigate(`/time-and-attendance/by-period?startDate=${formattedStartDate}&endDate=${formattedEndDate}`)
-                        }
+                {/* Back button */}
+                <Button
+                    onClick={() =>
+                        navigate(`/time-and-attendance/by-period?startDate=${formattedStartDate}&endDate=${formattedEndDate}`)
+                    }
+                    sx={{
+                        backgroundColor: theme.palette.common.white,
+                        borderRadius: "30px",
+                        width: 40,
+                        height: 40,
+                        minWidth: 0,
+                        padding: 0,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }}
+                >
+                    <ArrowBack sx={{ color: theme.palette.text.primary, fontSize: 24, fontWeight: 600 }} />
+                </Button>
 
-                        sx={{
-                            backgroundColor: theme.palette.common.white,
-                            borderRadius: "30px",
-                            minWidth: 0,
-                            width: 40,
-                            height: 40,
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            padding: 0,
-                            marginRight: theme.spacing(3),
-                        }}
-                    >
-                        <ArrowBack
-                            sx={{
-                                color: theme.palette.text.primary,
-                                fontSize: 24,
-                                fontWeight: 600,
-                            }}
-                        />
-                    </Button>
-                    <Avatar
-                        alt={employee.employeeName}
-                        src={`/assets/avatar/${employee.employeeId}.png`}
-                        sx={{ width: 64, height: 64, mr: 2 }}
-                    />
-                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                            {employee.employeeName || "N/A"}
-                        </Typography>
-                        <Typography variant="md3" sx={{ color: theme.palette.custom.lightGrey }}>
-                            {employee.employeeId || "N/A"}
-                        </Typography>
-                    </Box>
-                    <Box
-                        component="img"
-                        src={separatorIcon}
-                        alt="Separator"
-                        sx={{ height: 40, width: "auto", px: 3 }}
-                    />
-                    {activeTab === 0 && (
-                        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                                <Typography
-                                    variant="sm2"
-                                    sx={{ color: theme.palette.custom.lightGrey }}>
-                                    Total Hours Worked:
-                                </Typography>
-                                <Typography
-                                    variant="header3"
-                                    sx={{ color: theme.palette.custom.darkGrey }}>
-                                    {formatDecimalValue(employee.totalHoursWorked)}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                                <Typography
-                                    variant="sm2"
-                                    sx={{ color: theme.palette.custom.lightGrey }}>
-                                    Tardiness:
-                                </Typography>
-                                <Typography
-                                    variant="header3"
-                                    sx={{ color: theme.palette.custom.darkGrey }}>
-                                    {formatDecimalValue(employee.totalTardiness) || "-"}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                                <Typography
-                                    variant="sm2"
-                                    sx={{ color: theme.palette.custom.lightGrey }}>
-                                    Conflict:
-                                </Typography>
-                                <Typography
-                                    variant="header3"
-                                    sx={{ color: theme.palette.custom.darkGrey }}>
-                                    {employee.totaConflict || "-"}
-                                </Typography>
-                            </Box>
+                {/* Avatar */}
+                <Avatar
+                    alt={employee.employeeName}
+                    src={`/assets/avatar/${employee.employeeId}.png`}
+                    sx={{ width: 64, height: 64 }}
+                />
+
+                {/* Name + ID */}
+                <Box sx={{ display: "flex", flexDirection: "column", ml: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                        {employee.employeeName || "N/A"}
+                    </Typography>
+                    <Typography variant="md3" sx={{ color: theme.palette.custom.lightGrey }}>
+                        {employee.employeeId || "N/A"}
+                    </Typography>
+                </Box>
+
+                {/* Separator Icon */}
+                <Box
+                    component="img"
+                    src={separatorIcon}
+                    alt="Separator"
+                    sx={{ height: 40, width: "auto", mx: 4 }}
+                />
+
+                {/* Summary Fields */}
+                <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "flex-start" }}>
+                    {(summaryByTab[activeTab] || []).map((item, idx) => (
+                        <Box key={idx} sx={{ display: "flex", flexDirection: "column" }}>
+                            <Typography variant="sm2" sx={{ color: theme.palette.custom.lightGrey }}>
+                                {item.label}
+                            </Typography>
+                            <Typography variant="header3" sx={{ color: theme.palette.custom.darkGrey }}>
+                                {item.value}
+                            </Typography>
                         </Box>
-                    )}
-                    {activeTab === 1 && (
-                        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                                <Typography
-                                    variant="sm2"
-                                    sx={{ color: theme.palette.custom.lightGrey }}>
-                                    Total Overtime:
-                                </Typography>
-                                <Typography
-                                    variant="header3"
-                                    sx={{ color: theme.palette.custom.darkGrey }}>
-                                    {employee.totalOvertime || "-"}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    )}
-                    {activeTab === 2 && (
-                        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                                <Typography
-                                    variant="sm2"
-                                    sx={{ color: theme.palette.custom.lightGrey }}>
-                                    Annual Paid Time Off:
-                                </Typography>
-                                <Typography
-                                    variant="header3"
-                                    sx={{ color: theme.palette.custom.darkGrey }}>
-                                    {"-"}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                                <Typography
-                                    variant="sm2"
-                                    sx={{ color: theme.palette.custom.lightGrey }}>
-                                    Time Off Used:
-                                </Typography>
-                                <Typography
-                                    variant="header3"
-                                    sx={{ color: theme.palette.custom.darkGrey }}>
-                                    {"-"}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexGrow: 1, paddingRight: 8 }}>
-                                <Typography
-                                    variant="sm2"
-                                    sx={{ color: theme.palette.custom.lightGrey }}>
-                                    Remaining Time Off:
-                                </Typography>
-                                <Typography
-                                    variant="header3"
-                                    sx={{ color: theme.palette.custom.darkGrey }}>
-                                    {"-"}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    )}
+                    ))}
                 </Box>
             </Box>
 
@@ -241,438 +973,171 @@ const EmployeeAttendanceDetail = ({ attendanceData, overtimeData, timeOffData })
                 sx={{
                     width: "90%",
                     maxWidth: 1450,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                     borderBottom: 1,
                     borderColor: theme.palette.custom.darkBrown,
-                    marginBottom: 0,
-                    paddingBottom: 0,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
+                    gap: 2,
                 }}
             >
-                <Tabs
-                    value={activeTab}
-                    onChange={handleChange}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    sx={{
-                        marginBottom: 0,
-                        paddingBottom: 0,
-                        '& .MuiTab-root': {
-                            color: theme.palette.custom.brown,
-                            '&:hover': { color: theme.palette.custom.darkBrown },
-                            '&.Mui-selected': { color: theme.palette.custom.darkBrown },
-                        },
-                        '& .MuiTabs-indicator': {
-                            backgroundColor: theme.palette.custom.darkBrown,
-                        },
-                    }}
-                >
-                    <Tab
-                        disableRipple
-                        label="Attendance"
-                        icon={<img src={activeTab === 0 ? attendanceTabSelectedIcon : attendanceTabIcon} alt="Attendance" style={{ width: 24, height: 24 }} />}
-                        iconPosition="start"
-                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
-                    />
-                    <Tab
-                        disableRipple
-                        label="Overtime"
-                        icon={<img src={activeTab === 1 ? overtimeTabSelectedIcon : overtimeTabIcon} alt="Overtime" style={{ width: 24, height: 24 }} />}
-                        iconPosition="start"
-                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
-                    />
-                    <Tab
-                        disableRipple
-                        label="Time Off"
-                        icon={<img src={activeTab === 2 ? timeOffTabSelectedIcon : timeOffTabIcon} alt="Time Off" style={{ width: 24, height: 24 }} />}
-                        iconPosition="start"
-                        sx={{ paddingLeft: 1, paddingRight: 1, display: 'flex', justifyContent: 'center', fontSize: 20, mx: 4, textTransform: "capitalize" }}
-                    />
-                </Tabs>
-                {activeTab === 1 &&(
-                    <Button variant="contained" size="small"
+                {/* Tabs container */}
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        variant="scrollable"
+                        scrollButtons="auto"
                         sx={{
-                            display: { xs: 'none', sm: 'inline-flex' }
+                            '& .MuiTab-root': {
+                                color: theme.palette.custom.brown,
+                                '&:hover': { color: theme.palette.custom.darkBrown },
+                                '&.Mui-selected': { color: theme.palette.custom.darkBrown },
+                            },
+                            '& .MuiTabs-indicator': {
+                                backgroundColor: theme.palette.custom.darkBrown,
+                            },
                         }}
-                        onClick={() => setOpen(true)}
                     >
-                        <img
-                            src={addIcon}
-                            alt="Add Overtime"
-                            style={{ width: 20, height: 20 }}
+                        {tabs.map((tab, index) => (
+                            <Tab
+                                key={index}
+                                disableRipple
+                                label={tab.label}
+                                icon={
+                                    <img
+                                        src={activeTab === index ? tab.selectedIcon : tab.icon}
+                                        alt={tab.label}
+                                        style={{ width: 24, height: 24 }}
+                                    />
+                                }
+                                iconPosition="start"
+                                sx={{
+                                    px: 1,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    fontSize: 20,
+                                    mx: 4,
+                                    textTransform: "capitalize",
+                                }}
+                            />
+                        ))}
+                    </Tabs>
+                </Box>
 
-                        />
-                        Add Overtime
-                    </Button>
-                )}
-                <AddOvertimeModal 
-                    open={open} 
-                    onClose={() => setOpen(false)}
-                    documentId={documentId}
-                     />
-                {activeTab === 2 &&(
-                    <Button variant="contained" size="small"
-                        sx={{
-                            display: { xs: 'none', sm: 'inline-flex' }
-                        }}
-                        onClick={() => setOpen(true)}
-                    >
-                        <img
-                            src={addIcon}
-                            alt="Add Time Off"
-                            style={{ width: 20, height: 20 }}
-
-                        />
-                        Add Time Off
-                    </Button>
-                )}
-                <AddTimeOffModal 
-                    open={open} 
-                    onClose={() => setOpen(false)}
-                    documentId={documentId}
-                     />
+                {/* Action button */}
+                <Box sx={{ flexShrink: 0 }}>
+                    {actionLabels[activeTab] && (
+                        <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => setOpenModal(true)}
+                            startIcon={
+                                <img
+                                    src={   addIcon}
+                                    alt={`Add ${actionLabels[activeTab]}`}
+                                    style={{ width: 20, height: 20 }}
+                                />
+                            }
+                            sx={{
+                                "&:hover": { bgcolor: "#4b240c" },
+                            }}
+                        >
+                            {actionLabels[activeTab]}
+                        </Button>
+                    )}
+                </Box>
             </Box>
 
-            <Paper sx={{
-                width: "90%",
-                maxWidth: 1450,
-                bgcolor: "#FAFBFB",
-                borderRadius: 2,
-                border: "1px solid #BDBDBD",
-                boxShadow: "1px 1px 10px rgba(175, 136, 98, 0.25)",
-                padding: 0,
-                margin: 2,
-                overflow: "hidden",
-            }}
-                elevation={0}>
-
-                <Box sx={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, maxHeight: "calc(100vh - 280px)", overflow: "auto" }}>
+            <Paper
+                elevation={0}
+                sx={{
+                    width: "90%",
+                    maxWidth: 1450,
+                    bgcolor: "#FAFBFB",
+                    borderRadius: 2,
+                    border: "1px solid #BDBDBD",
+                    boxShadow: "1px 1px 10px rgba(175, 136, 98, 0.25)",
+                    my: 2,
+                    overflow: "hidden",
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        height: "100%",
+                        maxHeight: "calc(100vh - 280px)",
+                        overflow: "auto",
+                    }}
+                >
                     {activeTab === 0 && (
-                        <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
-                            <Box sx={{
-                                top: 0,
-                                zIndex: 10,
-                            }}>
-                                <Table stickyHeader sx={{ width: "100%" }}>
-                                    <TableHead>
-                                        <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
-                                        <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={dateIcon}
-                                                        alt="Date"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Date
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={shiftIcon}
-                                                        alt="Date"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Shift
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={clockInIcon}
-                                                        alt="Clock-in & out"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Clock-in & out
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={hoursWorkedIcon}
-                                                        alt="Hours Worked"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Hours Worked
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={tardinessIcon}
-                                                        alt="Tardiness"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Tardiness
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={actionIcon}
-                                                        alt="Actions"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Actions
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {attendance?.length ? (
-                                            attendance.map((record, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.date}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.shift.shiftStart} - {record.shift.shiftEnd}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        {record.timeEntries?.length ? (
-                                                            record.timeEntries.map((entry) => (
-                                                                <Box key={entry._id} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                                                                    <Typography variant="sm2">{entry.clockIn}</Typography>
-                                                                    <img src={lineIcon} alt="-" style={{ width: 100, height: 10 }} />
-                                                                    <Typography variant="sm2">{entry.clockOut || "-"}</Typography>
-                                                                </Box>
-                                                            ))
-                                                        ) : (
-                                                            <Typography variant="md3">No time entries available</Typography>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        {record.timeEntries?.length
-                                                            ? record.timeEntries
-                                                                .reduce((total, entry) => total + entry.hoursWorked, 0)
-                                                                .toFixed(2) + " hrs"
-                                                            : "0.00 hrs"}
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        {formatDecimalValue(record.tardiness) || "-"}
-                                                    </TableCell>
-                                                    
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow>
-                                                <TableCell colSpan={6}>
-                                                    <Typography>No attendance records available.</Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-
-
-                                </Table>
-                            </Box>
-                        </TableContainer>
+                        <DataTable columns={attendanceColumns} data={attendance} noDataMessage="No attendance records available." />
                     )}
-
                     {activeTab === 1 && (
-                        <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
-                            <Box sx={{
-                                top: 0,
-                                zIndex: 10,
-                            }}>
-                                <Table stickyHeader sx={{ width: "100%" }}>
-                                    <TableHead>
-                                        <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={dateIcon}
-                                                        alt="Date"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Date
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={overtimeStartEndIcon}
-                                                        alt="Overtime start & end"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Overtime start & end
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={overtimeHoursIcon}
-                                                        alt="Overtime Hours"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Overtime Hours
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={actionIcon}
-                                                        alt="Actions"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Actions
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {overtime?.length ? (
-                                            overtime.map((record, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.date}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.overtimeStart} - {record.overtimeEnd}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.overtimeHours}</Typography>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow>
-                                                <TableCell colSpan={6}>
-                                                    <Typography>No overtime records.</Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </Box>
-                        </TableContainer>
+                        <DataTable columns={overtimeColumns} data={overtime} noDataMessage="No overtime records." />
                     )}
-
                     {activeTab === 2 && (
-                        <TableContainer sx={{ flexGrow: 1, width: "100%" }}>
-                            <Box sx={{
-                                top: 0,
-                                zIndex: 10,
-                            }}>
-                                <Table stickyHeader sx={{ width: "100%" }}>
-                                    <TableHead>
-                                        <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={timeOffTypeDurationIcon}
-                                                        alt="Time Off Type"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Time Off Type
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={timeOffDateIcon}
-                                                        alt="Time Off Start Date"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Time Off Start Date
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={timeOffDateIcon}
-                                                        alt="Time Off End Date"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Time Off End Date
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={timeOffTypeDurationIcon}
-                                                        alt="Time Off Duration"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Time Off Duration
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                    <img
-                                                        src={actionIcon}
-                                                        alt="Actions"
-                                                        style={{ width: 24, height: 24 }}
-                                                    />
-                                                    <Typography variant="md3">
-                                                        Actions
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {timeOff?.length ? (
-                                            timeOff.map((record, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.timeOffType}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.timeOffStartDate} - {record.overtimeEnd}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.timeOffEndDate}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                                        <Typography variant="sm2">{record.timeOffDuration}</Typography>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow>
-                                                <TableCell colSpan={6}>
-                                                    <Typography>No time off records.</Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </Box>
-                        </TableContainer>
+                        <DataTable columns={timeOffColumns} data={timeOff} noDataMessage="No time off records." />
+                    )}
+                    {activeTab === 3 && (
+                        <DataTable columns={additionalEarningsColumns} data={additionalEarnings} noDataMessage="No additional earnings records." />
+                    )}
+                    {activeTab === 4 && (
+                        <DataTable columns={deductionsColumns} data={deductions} noDataMessage="No additional deduction records." />
                     )}
                 </Box>
             </Paper>
 
+            <AddOvertimeModal
+                open={openModal && activeTab === 1}
+                onClose={() => setOpenModal(false)}
+                documentId={documentId}
+                onOvertimeAdded={handleSubmitSuccess}
+                showSnackbar={showSnackbar}
+            />
+
+            <AddTimeOffModal
+                open={openModal && activeTab === 2}
+                onClose={() => setOpenModal(false)}
+                documentId={documentId}
+                onTimeOffAdded={handleSubmitSuccess}
+                showSnackbar={showSnackbar}
+            />
+
+            <AddEarningsModal
+                open={openModal && activeTab === 3}
+                onClose={() => setOpenModal(false)}
+                onEarningsAdded={handleSubmitSuccess}
+                documentId={documentId}
+                showSnackbar={showSnackbar}
+            />
+
+            <AddDeductionModal
+                open={openModal && activeTab === 4}
+                onClose={() => setOpenModal(false)}
+                onDeductionAdded={handleSubmitSuccess}
+                documentId={documentId}
+                showSnackbar={showSnackbar}
+            />
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+                <Alert
+                    severity={snackbar.severity}
+                    sx={{ width: "100%", fontSize: "0.875rem" }}
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+
+            <LoadingOverlay open={getLoadingForTab(activeTab)} />
         </Box>
     );
 };

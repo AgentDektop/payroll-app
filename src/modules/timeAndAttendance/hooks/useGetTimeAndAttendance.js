@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchAttendanceByPeriod} from "../services/TimeAndAttendanceAPI";
 
-const useAttendance = (startDate, endDate) => {
+const useAttendance = (startDate, endDate, refreshTrigger) => {
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ const useAttendance = (startDate, endDate) => {
     };
 
     fetchData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, refreshTrigger]); 
 
   return { attendance, loading, error };
 };

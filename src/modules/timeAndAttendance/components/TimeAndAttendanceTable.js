@@ -29,23 +29,26 @@ import tardinessIcon from "../../shared/assets/icon/attendance-tardiness-icon.pn
 import overtimeIcon from "../../shared/assets/icon/attendance-overtime-icon.png";
 import timeOffIcon from "../../shared/assets/icon/attendance-time-off-icon.png";
 import conflictIcon from "../../shared/assets/icon/attendance-conflict-icon.png";
-import { formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
+import uploadTimeRecordIcon from "../../shared/assets/icon/attendance-upload-time-record-icon-white.png";
+import { formatDuration } from "../../shared/utils/dateAndNumberUtils";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
 import UploadTimeRecordModal from "./UploadTimeRecordModal";
 
 const TimeAttendanceTable = () => {
     const theme = useTheme();
     const navigate = useNavigate();
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [searchParams] = useSearchParams();
 
     const startDateParam = searchParams.get("startDate");
     const endDateParam = searchParams.get("endDate");
     const initialStartDate = startDateParam ? parse(startDateParam, "dd-MM-yyyy", new Date()) : null;
     const initialEndDate = endDateParam ? parse(endDateParam, "dd-MM-yyyy", new Date()) : null;
-
+    
     const [searchText, setSearchText] = useState('');
     const [dateRange, setDateRange] = useState([initialStartDate, initialEndDate]);
+    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success"});
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [startDate, endDate] = dateRange;
 
     const formattedStartDate = startDate ? format(startDate, "dd-MM-yyyy") : "";
@@ -60,7 +63,7 @@ const TimeAttendanceTable = () => {
     };
 
     //Sorting
-    const [sortColumn, setSortColumn] = useState(null); 
+    const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState("asc");
 
     const handleSort = (column) => {
@@ -72,7 +75,7 @@ const TimeAttendanceTable = () => {
         }
     };
 
-    const { attendance } = useGetTimeAndAttendance(formattedStartDate, formattedEndDate, refreshTrigger);
+    const { attendance, loading, error } = useGetTimeAndAttendance(formattedStartDate, formattedEndDate, refreshTrigger);
 
     const filterEmployees = (employees) => {
         if (!searchText?.trim()) {
@@ -102,10 +105,9 @@ const TimeAttendanceTable = () => {
         return sortEmployees(filtered);
     }, [attendance, searchText, sortColumn, sortDirection]);
 
-
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState("");
-    const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+    const showSnackbar = (message, severity = "success") => {
+        setSnackbar({ open: true, message, severity });
+    };
 
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
@@ -196,13 +198,29 @@ const TimeAttendanceTable = () => {
                         )
                     }}
                 />
-                <Button variant="contained" size="small" onClick={() => setUploadModalOpen(true)}>
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setUploadModalOpen(true)}
+                    startIcon={
+                        <img src={uploadTimeRecordIcon} alt="Upload" style={{ width: 20, height: 20 }} />
+                    }
+                    sx={{
+                        px: 2,
+                        bgcolor: "#693714",
+                        color: "#ffffff",
+                        borderRadius: 2,
+                        textTransform: "none",
+                        fontWeight: 600,
+                        "&:hover": { bgcolor: "#4b240c" },
+                    }}>
                     Upload Time Record
                 </Button>
             </Box>
-            <UploadTimeRecordModal 
-                open={uploadModalOpen} 
+            <UploadTimeRecordModal
+                open={uploadModalOpen}
                 onClose={() => setUploadModalOpen(false)}
+                showSnackbar={showSnackbar}
                 refreshData={refreshData}
             />
 
@@ -218,88 +236,101 @@ const TimeAttendanceTable = () => {
                 elevation={0}
             >
                 <TableContainer sx={{ maxHeight: "calc(100vh - 250px)", overflow: "auto" }}>
-                        <Table stickyHeader sx={{ width: "100%"}}>
-                            <TableHead>
-                                <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
-                                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <img
-                                                src={employeeIcon}
-                                                alt="Employee"
-                                                style={{ width: 20, height: 20 }}
-                                            />
-                                            <Typography variant="md3">
-                                                Employee
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell onClick={() => handleSort("totalHoursWorked")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, px: 1 }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <img
-                                                src={hoursWorkedIcon}
-                                                alt="Hours Worked"
-                                                style={{ width: 20, height: 20 }}
-                                            />
-                                            <Typography variant="md3">
-                                                Hours Worked
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell onClick={() => handleSort("totalTardiness")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, px: 1 }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <img
-                                                src={tardinessIcon}
-                                                alt="Tardiness"
-                                                style={{ width: 20, height: 20 }}
-                                            />
-                                            <Typography variant="md3">
-                                                Tardiness
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell onClick={() => handleSort("totalOvertime")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <img
-                                                src={overtimeIcon}
-                                                alt="Overtime"
-                                                style={{ width: 20, height: 20 }}
-                                            />
-                                            <Typography variant="md3">
-                                                Overtime
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell onClick={() => handleSort("totalTimeOff")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <img
-                                                src={timeOffIcon}
-                                                alt="Time Off"
-                                                style={{ width: 20, height: 20 }}
-                                            />
-                                            <Typography variant="md3">
-                                                Time Off
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell onClick={() => handleSort("totalConflict")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <img
-                                                src={conflictIcon}
-                                                alt="Conflict"
-                                                style={{ width: 20, height: 20 }}
-                                            />
-                                            <Typography variant="md3">
-                                                Conflict
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {displayedEmployees.map((item, index) => (
-                                    <TableRow 
-                                        key={index} 
-                                        hover 
+                    <Table stickyHeader sx={{ width: "100%" }}>
+                        <TableHead>
+                            <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
+                                <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <img
+                                            src={employeeIcon}
+                                            alt="Employee"
+                                            style={{ width: 20, height: 20 }}
+                                        />
+                                        <Typography variant="md3">
+                                            Employee
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell onClick={() => handleSort("totalHoursWorked")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, px: 1 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <img
+                                            src={hoursWorkedIcon}
+                                            alt="Hours Worked"
+                                            style={{ width: 20, height: 20 }}
+                                        />
+                                        <Typography variant="md3">
+                                            Hours Worked
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell onClick={() => handleSort("totalTardiness")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, px: 1 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <img
+                                            src={tardinessIcon}
+                                            alt="Tardiness"
+                                            style={{ width: 20, height: 20 }}
+                                        />
+                                        <Typography variant="md3">
+                                            Tardiness
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell onClick={() => handleSort("totalUndertime")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, px: 1 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <img
+                                            src={tardinessIcon}
+                                            alt="Undertime"
+                                            style={{ width: 20, height: 20 }}
+                                        />
+                                        <Typography variant="md3">
+                                            Undertime
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell onClick={() => handleSort("totalOvertime")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <img
+                                            src={overtimeIcon}
+                                            alt="Overtime"
+                                            style={{ width: 20, height: 20 }}
+                                        />
+                                        <Typography variant="md3">
+                                            Overtime
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell onClick={() => handleSort("totalTimeOff")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <img
+                                            src={timeOffIcon}
+                                            alt="Time Off"
+                                            style={{ width: 20, height: 20 }}
+                                        />
+                                        <Typography variant="md3">
+                                            Time Off
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell onClick={() => handleSort("totalConflict")} sx={{ cursor: "pointer", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <img
+                                            src={conflictIcon}
+                                            alt="Conflict"
+                                            style={{ width: 20, height: 20 }}
+                                        />
+                                        <Typography variant="md3">
+                                            Conflict
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {attendance?.length ? (
+                                displayedEmployees.map((item, index) => (
+                                    <TableRow
+                                        key={index}
+                                        hover
                                         style={{ cursor: "pointer" }}
                                         onClick={() => {
                                             navigate(
@@ -318,45 +349,73 @@ const TimeAttendanceTable = () => {
                                                 </Box>
                                             </Box>
                                         </TableCell>
-                                        <TableCell sx={{ fontSize: "14px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, fontWeight: item.totalHoursWorked < 1? 700:"inherit" }}>
-                                            {item.totalHoursWorked < 1? "-" : formatDecimalValue(item.totalHoursWorked)}
+                                        <TableCell sx={{ fontSize: "14px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, fontWeight: item.totalHoursWorked < 1 ? 700 : "inherit" }}>
+                                            {item.totalHoursWorked > 0 ? formatDuration(item.totalHoursWorked) : "-"}
                                         </TableCell>
-                                        <TableCell sx={{ fontSize: "14px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, fontWeight: item.totalTardiness < 1? 700:"inherit" }}>
-                                            {item.totalTardiness < 1 ? "-": formatDecimalValue(item.totalTardiness)}
+                                        <TableCell
+                                            sx={{
+                                                fontSize: "14px",
+                                                borderRight: `1px solid ${theme.palette.custom.greyBorder}`,
+                                                color: item.totalTardiness > 0 ? theme.palette.error.main : "inherit",
+                                                fontWeight: item.totalTardiness > 0 ? 700 : "inherit"
+                                            }}>
+                                            {item.totalTardiness > 0 ? formatDuration(item.totalTardiness) : "-"}
                                         </TableCell>
-                                        <TableCell sx={{ fontSize: "14px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, fontWeight: item.totalOvertime < 1? 700:"inherit" }}>
-                                            {item.totalOvertime < 1 ? "-": item.totalOvertime}
+                                        <TableCell
+                                            sx={{
+                                                fontSize: "14px",
+                                                borderRight: `1px solid ${theme.palette.custom.greyBorder}`,
+                                                color: item.totalUndertime > 0 ? theme.palette.error.main : "inherit",
+                                                fontWeight: item.totalUndertime > 0 ? 700 : "inherit"
+                                            }}>
+                                            {item.totalUndertime > 0 ? formatDuration(item.totalUndertime) : "-"}
                                         </TableCell>
-                                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, fontWeight: item.totalTimeOff < 1? 700:"inherit" }}>
-                                            {item.totalTimeOff < 1 ? "-": item.totalTimeOff}
+                                        <TableCell sx={{ fontSize: "14px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, fontWeight: item.totalOvertime < 1 ? 700 : "inherit" }}>
+                                            {item.totalOvertime > 0 ? formatDuration(item.totalOvertime) : "-"}
                                         </TableCell>
-                                        <TableCell 
-                                            sx={{ 
-                                                fontSize: "14px", 
-                                                borderRight: `1px solid ${theme.palette.custom.greyBorder}`, 
+                                        <TableCell sx={{ fontSize: "14px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, fontWeight: item.totalTimeOff < 1 ? 700 : "inherit" }}>
+                                            {item.totalTimeOff > 0 ? `${item.totalTimeOff}d` : "-"}
+                                        </TableCell>
+                                        <TableCell
+                                            sx={{
+                                                fontSize: "14px",
+                                                borderRight: `1px solid ${theme.palette.custom.greyBorder}`,
                                                 color: item.totalConflict > 0 ? theme.palette.error.main : "inherit",
                                                 fontWeight: item.totalConflict > 0 ? 700 : "inherit"
-                                                }}>
+                                            }}>
                                             {item.totalConflict}
                                         </TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={6}>
+                                        <Typography>No time and attendance records available.</Typography>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             </Paper>
 
             {/* Snackbar for notifications */}
             <Snackbar
-                open={snackbarOpen}
+                open={snackbar.open}
                 autoHideDuration={4000}
-                onClose={() => setSnackbarOpen(false)}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
                 anchorOrigin={{ vertical: "top", horizontal: "right" }}
             >
-                <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: "100%" }}>
-                    {snackbarMessage}
+                <Alert
+                    severity={snackbar.severity}
+                    sx={{ width: "100%", fontSize: "0.875rem" }}
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                >
+                    {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <LoadingOverlay open={loading} />
         </Box>
     );
 };
