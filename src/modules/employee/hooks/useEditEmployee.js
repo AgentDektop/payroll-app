@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { formatDateForAPI, prepareEmployeePayload } from "../utils/employeeUtils.js";
-import { updateEmployee} from "../services/EmployeeAPI.js";
+import { updateEmployee } from "../services/EmployeeAPI.js";
 
 const useEmployeeEdit = (employee, fetchEmployeeData) => {
   const [activeTab, setActiveTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(employee);
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState(
     employee || {
@@ -116,6 +117,7 @@ const useEmployeeEdit = (employee, fetchEmployeeData) => {
   const handleEdit = () => setIsEditing(true);
 
   const handleSave = async () => {
+    setLoading(true);
     try {
       let formattedData = prepareEmployeePayload(editedData, true);
   
@@ -130,6 +132,8 @@ const useEmployeeEdit = (employee, fetchEmployeeData) => {
       fetchEmployeeData();
     } catch (error) {
       console.error("Error updating employee:", error);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -148,6 +152,7 @@ const useEmployeeEdit = (employee, fetchEmployeeData) => {
     isEditing,
     formData, 
     editedData,
+    loading,
     handleTabChange,
     handleSelect,
     handleChange,

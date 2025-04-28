@@ -13,6 +13,7 @@ import useAllEmployeeData from "../hooks/useAllEmployeeData.js";
 import SearchableDropdown from "./SearchableDropdown.js";
 
 import "react-datepicker/dist/react-datepicker.css";
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
 import calendarIcon from "../../shared/assets/icon/calendar-icon.png";
 import saveIcon from "../../shared/assets/icon/add-employee-save-icon.png";
 import { calculateAge, prepareEmployeePayload } from "../utils/employeeUtils.js";
@@ -1728,6 +1729,7 @@ const AddEmployeeModal = ({ open, onClose, onSuccess }) => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+      <LoadingOverlay open={loading} />
     </>
 
   );

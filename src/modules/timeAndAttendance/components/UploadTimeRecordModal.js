@@ -155,6 +155,11 @@ const UploadTimeRecordModal = ({ open, onClose, refreshData, showSnackbar }) => 
                         selected={startDate}
                         onChange={(date) => setStartDate(date)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 label="Period Start Date"
@@ -176,6 +181,11 @@ const UploadTimeRecordModal = ({ open, onClose, refreshData, showSnackbar }) => 
                         selected={endDate}
                         onChange={(date) => setEndDate(date)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 label="Period End Date"

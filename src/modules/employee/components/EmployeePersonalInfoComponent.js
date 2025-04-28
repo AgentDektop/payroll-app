@@ -49,6 +49,7 @@ import calendarIcon from "../../shared/assets/icon/calendar-icon.png"
 import { formatHistoryValue } from "../utils/employeeUtils";
 import useAllEmployeeData from "../hooks/useAllEmployeeData";
 import SearchableDropdown from "./SearchableDropdown";
+import LoadingOverlay from "../../shared/components/LoadingOverlay";
 
 
 const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
@@ -60,6 +61,7 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
     isEditing,
     formData,
     editedData,
+    loading,
     handleTabChange,
     handleSelect,
     handleChange,
@@ -2293,25 +2295,33 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {employee.history.map((row, index) => (
-                      <TableRow key={index} sx={{ backgroundColor: theme.palette.custom.white }}>
-                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, }}>
-                          {formatUIDisplayDate(row.date, UI_DATE_FORMAT) || "N/A"}
+                    {employee.history?.length
+                      ?
+                      employee.history.map((row, index) => (
+                        <TableRow key={index} sx={{ backgroundColor: theme.palette.custom.white }}>
+                          <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}`, }}>
+                            {formatUIDisplayDate(row.date, UI_DATE_FORMAT) || "N/A"}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                            {row.type}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                            {row.fieldName}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                            {formatHistoryValue(row.previousValue)}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                            {formatHistoryValue(row.updatedValue)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                      :
+                      <TableRow sx={{ backgroundColor: theme.palette.custom.white }}>
+                        <TableCell colSpan={5} sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
+                          <Typography>No history data available.</Typography>
                         </TableCell>
-                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                          {row.type}
-                        </TableCell>
-                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                          {row.fieldName}
-                        </TableCell>
-                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                          {formatHistoryValue(row.previousValue)}
-                        </TableCell>
-                        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-                          {formatHistoryValue(row.updatedValue)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>}
                   </TableBody>
                 </Table>
               </Box>
@@ -2319,6 +2329,7 @@ const EmployeePersonalInfo = ({ employee, fetchEmployeeData }) => {
           </Box>
         )}
       </Paper>
+      <LoadingOverlay open={loading} />
     </Box>
   );
 };

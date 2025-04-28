@@ -3,33 +3,23 @@ import {
     Box,
     Typography,
     Paper,
-    Divider,
     useTheme,
     Stack,
 } from "@mui/material";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import PaidIcon from "@mui/icons-material/Paid";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    Tooltip,
-    ResponsiveContainer,
-    Legend,
-} from "recharts";
+import workedHoursIcon from "../../shared/assets/icon/dashboard-work-hours-icon-green.png";
+import overtimeIcon from "../../shared/assets/icon/dashboard-overtime-icon-blue.png";
+import tardinessIcon from "../../shared/assets/icon/dashboard-late-icon-red.png";
+import separatorIcon from "../../shared/assets/icon/vertical-line-separator.png";
 
-const getDiffLabel = (current = 0, previous = 0, unit = 'Hrs', label = 'vs last month') => {
+import { formatDecimalValue } from "../../shared/utils/dateAndNumberUtils";
+
+const getDiffLabel = (current = 0, previous = 0, unit = 'hrs', label = 'from last month') => {
     const diff = Number(current) - Number(previous);
     const absDiff = Math.abs(diff).toFixed(2);
     const icon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➖';
-    const descriptor = diff > 0 ? 'longer' : diff < 0 ? 'shorter' : 'no change';
+    const descriptor = diff > 0 ? 'increase' : diff < 0 ? 'decrease' : 'no change';
 
-    return `${icon} ${absDiff} ${unit} ${descriptor} ${label}`;
+    return `${icon} ${formatDecimalValue(absDiff)} ${unit} — ${descriptor} ${label}`;
 };
 
 const Dashboard = ({ data }) => {
@@ -67,162 +57,133 @@ const Dashboard = ({ data }) => {
                 Dashboard
             </Typography>
 
-            <Box
-                sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 2,
-                    mb: 3,
-                }}
-            >
-                <Paper elevation={2} sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.333% - 16px)" }, p: 3 }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <AccessTimeIcon color="success" />
-                        <Box>
-                            <Typography variant="body2" color="success.main">
-                                {getDiffLabel(currTotalWorkedHours, prevTotalWorkedHours)}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, my: 2 }}>
+                <Paper
+                    elevation={2}
+                    sx={{
+                        flex: { xs: "1 1 100%", md: "1 1 calc(33.333% - 16px)" },
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        p: 3,
+                        boxShadow: "-1px -1px 10px 0px rgba(175, 136, 98, 0.25)"
+                    }}
+                >
+                    <Stack spacing={1}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Box component="img" src={workedHoursIcon} alt="Worked Hours Icon" sx={{ width: 48, height: 48, mr: 5 }} />
+                            <Typography variant="md3" color="#44B678">{getDiffLabel(currTotalWorkedHours, prevTotalWorkedHours)}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <Typography variant="header3" color="#303131" sx={{ pt: 1, pb: 0, mt: 0 }}>
+                                {!currTotalWorkedHours || currTotalWorkedHours === 0 ? "-" : formatDecimalValue(currTotalWorkedHours)}
                             </Typography>
-                            <Typography variant="h6" fontWeight={600}>
-                                {!currTotalWorkedHours || currTotalWorkedHours === 0 ? "-" : currTotalWorkedHours.toFixed(2)}
-                            </Typography>
-                            <Typography color="text.secondary" fontSize={14}>
-                                Total worked hours
-                            </Typography>
+                            <Typography variant="sm2" color="#7A7A7A" sx={{ py: 0, mt: 0 }}>Total worked hours</Typography>
                         </Box>
                     </Stack>
                 </Paper>
 
-                <Paper elevation={2} sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.333% - 16px)" }, p: 3 }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <HourglassBottomIcon color="info" />
-                        <Box>
-                            <Typography variant="body2" color="info.main">
-                                {getDiffLabel(currTotalOvertimeHours, prevTotalOvertimeHours)}
+                <Paper
+                    elevation={2}
+                    sx={{
+                        flex: { xs: "1 1 100%", md: "1 1 calc(33.333% - 16px)" },
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        p: 3,
+                        boxShadow: "-1px -1px 10px 0px rgba(175, 136, 98, 0.25)"
+                    }}
+                >
+                    <Stack spacing={1}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Box component="img" src={overtimeIcon} alt="Overtime Icon" sx={{ width: 48, height: 48, mr: 5 }} />
+                            <Typography variant="md3" color="#4CB0E8">{getDiffLabel(currTotalOvertimeHours, prevTotalOvertimeHours)}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <Typography variant="header3" color="#303131" sx={{ pt: 1, pb: 0, mt: 0 }}>
+                                {!currTotalOvertimeHours || currTotalOvertimeHours === 0 ? "-" : formatDecimalValue(currTotalOvertimeHours)}
                             </Typography>
-                            <Typography variant="h6" fontWeight={600}>
-                                {!currTotalOvertimeHours || currTotalOvertimeHours === 0 ? "-" : currTotalOvertimeHours.toFixed(2)}
-                            </Typography>
-                            <Typography color="text.secondary" fontSize={14}>
-                                Total overtime hours
-                            </Typography>
+                            <Typography variant="sm2" color="#7A7A7A" sx={{ py: 0, mt: 0 }}>Total overtime hours</Typography>
                         </Box>
                     </Stack>
                 </Paper>
 
-                <Paper elevation={2} sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.333% - 16px)" }, p: 3 }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <ErrorOutlineIcon color="error" />
-                        <Box>
-                            <Typography variant="body2" color="error.main">
-                                {getDiffLabel(currTotalTardiness, prevTotalTardiness)}
+                <Paper
+                    elevation={2}
+                    sx={{
+                        flex: { xs: "1 1 100%", md: "1 1 calc(33.333% - 16px)" },
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        p: 3,
+                        boxShadow: "-1px -1px 10px 0px rgba(175, 136, 98, 0.25)"
+                    }}
+                >
+                    <Stack spacing={1}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Box component="img" src={tardinessIcon} alt="Tardiness Icon" sx={{ width: 48, height: 48, mr: 5 }} />
+                            <Typography variant="md3" color="#E65C62">{getDiffLabel(currTotalTardiness, prevTotalTardiness)}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <Typography variant="header3" color="#303131" sx={{ pt: 1, pb: 0, mt: 0 }}>
+                                {!currTotalTardiness || currTotalTardiness === 0 ? "-" : formatDecimalValue(currTotalTardiness)}
                             </Typography>
-                            <Typography variant="h6" fontWeight={600}>
-                                {!currTotalTardiness || currTotalTardiness === 0 ? "-" : currTotalTardiness.toFixed(2)}
-                            </Typography>
-                            <Typography color="text.secondary" fontSize={14}>
-                                Total late hours
-                            </Typography>
+                            <Typography variant="sm2" color="#7A7A7A" sx={{ py: 0, mt: 0 }}>Total late hours</Typography>
                         </Box>
                     </Stack>
                 </Paper>
             </Box>
 
-            <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                    Latest Pay Run
-                </Typography>
+            <Paper elevation={3} sx={{ p: 4, mb: 4, boxShadow: "-1px -1px 10px 0px rgba(175, 136, 98, 0.25)" }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Typography variant="header3" gutterBottom>Latest Approved Pay Run</Typography>
 
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                    <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(25% - 16px)" } }}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <PaidIcon color="success" />
-                            <Box>
-                                <Typography fontSize={14} color="text.secondary">
-                                    Employee's Net Pay
-                                </Typography>
-                                <Typography fontWeight={500}>
-                                    {!totalNetPay || totalNetPay === 0 ? "-" : `${totalNetPay.toFixed(2)} AED`}
-                                </Typography>
-                            </Box>
-                        </Stack>
-                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center' }}>
+                        <Box sx={{ flex: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <Typography variant="sm2" color="#7a7a7a">Employee's Net Pay</Typography>
+                                    <Typography variant="header3" color="#303131">
+                                        {!totalNetPay || totalNetPay === 0 ? "-" : `${formatDecimalValue(totalNetPay)} AED`}
+                                    </Typography>
+                                </Box>
+                            </Stack>
+                        </Box>
 
-                    <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(25% - 16px)" } }}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <PaidIcon color="error" />
-                            <Box>
-                                <Typography fontSize={14} color="text.secondary">
-                                    Employee's Deductions
-                                </Typography>
-                                <Typography fontWeight={500}>
-                                    {!totalDeductions || totalDeductions === 0 ? "-" : `${totalDeductions.toFixed(2)} AED`}
-                                </Typography>
-                            </Box>
-                        </Stack>
-                    </Box>
+                        <Box component="img" src={separatorIcon} alt="Separator" sx={{ height: "100%", width: "auto", mx: 4 }} />
 
-                    <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(25% - 16px)" } }}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <CalendarMonthIcon />
-                            <Box>
-                                <Typography fontSize={14} color="text.secondary">
-                                    Payment Date
-                                </Typography>
-                                <Typography fontWeight={500}>{paymentDate || "-"}</Typography>
-                            </Box>
-                        </Stack>
-                    </Box>
+                        <Box sx={{ flex: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <Typography variant="sm2" color="#7a7a7a">Employee's Deductions</Typography>
+                                    <Typography variant="header3" color="#303131">
+                                        {!totalDeductions || totalDeductions === 0 ? "-" : `${formatDecimalValue(totalDeductions)} AED`}
+                                    </Typography>
+                                </Box>
+                            </Stack>
+                        </Box>
 
-                    <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(25% - 16px)" } }}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <PeopleAltOutlinedIcon />
-                            <Box>
-                                <Typography fontSize={14} color="text.secondary">
-                                    No. of Employees
-                                </Typography>
-                                <Typography fontWeight={500}>{numberOfEmployees || "-"}</Typography>
-                            </Box>
-                        </Stack>
+                        <Box component="img" src={separatorIcon} alt="Separator" sx={{ height: "100%", width: "auto", mx: 4 }} />
+
+                        <Box sx={{ flex: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <Typography variant="sm2" color="#7a7a7a">Payment Date</Typography>
+                                    <Typography variant="header3" color="#303131">{paymentDate || "-"}</Typography>
+                                </Box>
+                            </Stack>
+                        </Box>
+
+                        <Box component="img" src={separatorIcon} alt="Separator" sx={{ height: "100%", width: "auto", mx: 4 }} />
+
+                        <Box sx={{ flex: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <Typography variant="sm2" color="#7a7a7a">No. of Employees</Typography>
+                                    <Typography variant="header3" color="#303131">{numberOfEmployees || "-"}</Typography>
+                                </Box>
+                            </Stack>
+                        </Box>
                     </Box>
                 </Box>
             </Paper>
-
-
-            {/* <Paper elevation={3} sx={{ p: 4 }}>
-                <Typography variant="h6" fontWeight={600} mb={2}>
-                    Payroll Cost Summary
-                </Typography>
-
-                <Box sx={{ width: '100%', minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {payrollCostSummary && payrollCostSummary.length > 0 ? (
-                        <ResponsiveContainer width="100%" aspect={2.5}>
-                            <BarChart data={payrollCostSummary}>
-                                <XAxis dataKey="month" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend verticalAlign="top" />
-                                <Bar dataKey="totalCost" stackId="a" fill="#00C49F" name="Total Payroll Cost" />
-                                <Bar dataKey="totalDeductions" stackId="a" fill="#FF6B6B" name="Total Payroll Deductions" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <Typography variant="body2" color="text.secondary">
-                            Data Unavailable
-                        </Typography>
-                    )}
-                </Box>
-
-                <Divider sx={{ my: 1 }} />
-
-                <Box>
-                    <Typography>
-                        Total Payroll Cost: <strong>-</strong>
-                    </Typography>
-                    <Typography>
-                        Total Payroll Deductions: <strong>-</strong>
-                    </Typography>
-                </Box>
-            </Paper> */}
         </Box>
     );
 };

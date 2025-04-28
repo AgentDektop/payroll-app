@@ -129,6 +129,11 @@ const AddEarningsModal = ({ open, onClose, documentId, onEarningsAdded, showSnac
                         selected={date}
                         onChange={(d) => setDate(d)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 label="Date"

@@ -5,6 +5,7 @@ import MuiAlert from '@mui/material/Alert';
 import { useNavigate } from 'react-router-dom';
 import panaderoIcon from "../assets/icon/panadero-icon.png";
 import theme from '../theme';
+import LoadingOverlay from './LoadingOverlay';
 
 const LoginForm = () => {
     const { user, login, error, loading, } = useAuth();
@@ -198,6 +199,8 @@ const LoginForm = () => {
                     </MuiAlert>
                 </Snackbar>
             </Card>
+            
+            <LoadingOverlay open={loading} />
         </Box>
     );
 
