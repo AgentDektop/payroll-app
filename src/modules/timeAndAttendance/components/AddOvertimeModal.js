@@ -123,6 +123,11 @@ const AddOvertimeModal = ({ open, onClose, documentId, onOvertimeAdded, showSnac
             selected={date}
             onChange={(newDate) => setDate(newDate)}
             dateFormat="dd-MM-yyyy"
+            isClearable
+            showMonthDropdown
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={10}
             customInput={
               <TextField
                 label="Overtime Date"

@@ -44,10 +44,10 @@ const TimeAttendanceTable = () => {
     const endDateParam = searchParams.get("endDate");
     const initialStartDate = startDateParam ? parse(startDateParam, "dd-MM-yyyy", new Date()) : null;
     const initialEndDate = endDateParam ? parse(endDateParam, "dd-MM-yyyy", new Date()) : null;
-    
+
     const [searchText, setSearchText] = useState('');
     const [dateRange, setDateRange] = useState([initialStartDate, initialEndDate]);
-    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success"});
+    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [startDate, endDate] = dateRange;
 
@@ -171,6 +171,11 @@ const TimeAttendanceTable = () => {
                                 setDateRange(update);
                             }}
                             dateFormat="dd-MM-yyyy"
+                            isClearable
+                            showMonthDropdown
+                            showYearDropdown
+                            scrollableYearDropdown
+                            yearDropdownItemNumber={10}
                             placeholderText="Select time period"
                             customInput={<CustomDateInput value={`${formattedStartDate}${startDate && endDate ? " - " : ""}${formattedEndDate}`} />}
                             withPortal

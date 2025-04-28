@@ -101,7 +101,7 @@ const EmployeeAttendanceDetail = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [deleteCallback, setDeleteCallback] = useState(() => { });
-    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success"});
+    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -210,15 +210,15 @@ const EmployeeAttendanceDetail = () => {
 
     const getLoadingForTab = (tabIndex) => {
         switch (tabIndex) {
-            case 0: 
+            case 0:
                 return useSaveAttendance.loading || useDeleteAttendance.loading;
-            case 1: 
+            case 1:
                 return useSaveOvertime.loading || useDeleteOvertime.loading;
-            case 2: 
+            case 2:
                 return useSaveTimeOff.loading || useDeleteTimeOff.loading;
-            case 3: 
+            case 3:
                 return useSaveEarnings.loading || useDeleteEarnings.loading;
-            case 4: 
+            case 4:
                 return useSaveDeduction.loading || useDeleteDeduction.loading;
             default:
                 return false;
@@ -434,6 +434,11 @@ const EmployeeAttendanceDetail = () => {
                         }
                         onChange={(newDate) => handleDateChange("date", newDate)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 size="small"
@@ -514,6 +519,11 @@ const EmployeeAttendanceDetail = () => {
                         }
                         onChange={(newDate) => handleDateChange("timeOffStartDate", newDate)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 size="small"
@@ -544,6 +554,11 @@ const EmployeeAttendanceDetail = () => {
                         }
                         onChange={(newDate) => handleDateChange("timeOffEndDate", newDate)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 size="small"
@@ -609,6 +624,11 @@ const EmployeeAttendanceDetail = () => {
                         }
                         onChange={(newDate) => handleDateChange("date", newDate)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 size="small"
@@ -698,6 +718,11 @@ const EmployeeAttendanceDetail = () => {
                         }
                         onChange={(newDate) => handleDateChange("date", newDate)}
                         dateFormat="dd-MM-yyyy"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={10}
                         customInput={
                             <TextField
                                 size="small"
@@ -1034,7 +1059,7 @@ const EmployeeAttendanceDetail = () => {
                             onClick={() => setOpenModal(true)}
                             startIcon={
                                 <img
-                                    src={   addIcon}
+                                    src={addIcon}
                                     alt={`Add ${actionLabels[activeTab]}`}
                                     style={{ width: 20, height: 20 }}
                                 />
