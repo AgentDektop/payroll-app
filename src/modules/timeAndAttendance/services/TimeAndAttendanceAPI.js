@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const TIME_AND_ATTENDANCE_API_URL = "http://localhost:5050/time-and-attendance";
+const TIME_AND_ATTENDANCE_API_URL = "https://payroll-api-d6uc.onrender.com/time-and-attendance";
 
 const fetchAttendanceByPeriod = async (startDate, endDate) => {
   const url = `${TIME_AND_ATTENDANCE_API_URL}/by-period?startDate=${startDate}&endDate=${endDate}`;

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { formatDateForAPI } from "../../employee/utils/employeeUtils";
-const PAYRUN_API_URL = "http://localhost:5050/pay-run";
+const PAYRUN_API_URL = "https://payroll-api-d6uc.onrender.com/pay-run";
 
 const downloadPayslip = async (payRunId) => {
   try {
