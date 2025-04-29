@@ -78,7 +78,7 @@ const ProcessPayRunModal = ({ open, onClose, refreshPayRunData, showSnackbar }) 
     // Validate time and attendance.
     try {
       const taResponse = await fetch(
-        `http://localhost:5050/time-and-attendance/by-period?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+        `https://payroll-api-d6uc.onrender.com/time-and-attendance/by-period?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
       );
       const taData = await taResponse.json();
       if (Array.isArray(taData) && taData.length === 0) {

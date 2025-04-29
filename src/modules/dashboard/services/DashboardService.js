@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const DASHBOARD_URL = "http://localhost:5050/dashboard";
+const DASHBOARD_URL = "https://payroll-api-d6uc.onrender.com/dashboard";
 
 const fetchDashboard = async () => {
     try {

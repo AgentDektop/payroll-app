@@ -1,5 +1,5 @@
 import axios from "axios";
-const EMPLOYEE_API_URL = "http://localhost:5050/employee";
+const EMPLOYEE_API_URL = "https://payroll-api-d6uc.onrender.com/employee";
 
 const fetchEmployees = async () => {
   const response = await fetch(`${EMPLOYEE_API_URL}/all`);
