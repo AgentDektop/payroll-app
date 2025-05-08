@@ -4,12 +4,6 @@ import {
     Tabs,
     Tab,
     Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     Typography,
     Button,
     useTheme,
@@ -39,7 +33,6 @@ import clockInIcon from "../../shared/assets/icon/attendance-tab-clock-in-out-ic
 import hoursWorkedIcon from "../../shared/assets/icon/attendance-tab-hours-worked-icon.png";
 import tardinessIcon from "../../shared/assets/icon/attendance-tab-tardiness-icon.png";
 import overtimeHoursIcon from "../../shared/assets/icon/attendance-overtime-hours-icon.png";
-import overtimeStartEndIcon from "../../shared/assets/icon/attendance-overtime-start-date-icon.png";
 import typeIcon from "../../shared/assets/icon/type-column-icon.png";
 import startDateIcon from "../../shared/assets/icon/start-date-column-icon.png";
 import endDateIcon from "../../shared/assets/icon/end-date-column-icon.png";
@@ -71,6 +64,7 @@ import AddEarningsModal from "./AddEarningsModal";
 import AddDeductionModal from "./AddDeductionModal";
 import useSubmit from "../hooks/useSubmit";
 import LoadingOverlay from "../../shared/components/LoadingOverlay";
+import SortableDataTable from "../../shared/components/SortableDataTable";
 import { updateEmployeeAttendance, deleteEmployeeAttendance, updateEmployeeOvertime, deleteEmployeeOvertime, updateEmployeeTimeOff, deleteEmployeeTimeOff, updateEmployeeEarnings, deleteEmployeeEarnings, updateEmployeeDeduction, deleteEmployeeDeduction } from "../services/TimeAndAttendanceAPI";
 
 const earningTypes = [
@@ -102,6 +96,7 @@ const EmployeeAttendanceDetail = () => {
     const [openModal, setOpenModal] = useState(false);
     const [deleteCallback, setDeleteCallback] = useState(() => { });
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -133,6 +128,18 @@ const EmployeeAttendanceDetail = () => {
     const isEditing = (row) => editingRowId === row._id;
 
     const handleTabChange = (event, newValue) => setActiveTab(newValue);
+
+    const handleSort = (key) => {
+        setSortConfig((prev) => {
+            if (prev.key === key) {
+                return {
+                    key,
+                    direction: prev.direction === "asc" ? "desc" : "asc"
+                };
+            }
+            return { key, direction: "asc" };
+        });
+    };
 
     const handleSubmitSuccess = (newRecord) => {
         setEmployee(newRecord);
@@ -193,15 +200,17 @@ const EmployeeAttendanceDetail = () => {
             const result = await deleteCallback({ ...rowToDelete, documentId });
             showSnackbar("Deleted successfully.", "success");
             handleSubmitSuccess(result);
-            setOpenDialog(false);
-            setRowToDelete(null);
         } catch (error) {
             showSnackbar("Something went wrong while deleting.", "error");
+        } finally {
+            setOpenDialog(false);
+            setRowToDelete(null);
         }
     };
 
     const handleCancelDelete = () => {
         setOpenDialog(false);
+        setRowToDelete(null);
     };
 
     const showSnackbar = (message, severity = "success") => {
@@ -236,9 +245,7 @@ const EmployeeAttendanceDetail = () => {
             { label: "Total Overtime", value: formatDuration(employee.totalOvertime) || "-" },
         ],
         2: [
-            { label: "Annual Paid Time Off", value: "-" },
-            { label: "Time Off Used", value: "-" },
-            { label: "Remaining Time Off", value: "-" },
+            { label: "Total Time Off", value: employee.totalTimeOff ? `${employee.totalTimeOff} Day(s)` : "-" },
         ],
         3: [
             { label: "Total Earnings", value: formatDuration(employee.totalAdditionalEarnings) || "-" },
@@ -321,11 +328,13 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Date",
             icon: dateIcon,
+            key: "date",
             render: (row) => <Typography variant="sm2">{row.date}</Typography>
         },
         {
             label: "Shift",
             icon: shiftIcon,
+            key: "shift.shiftStart",
             render: (row) =>
                 isEditing(row)
                     ?
@@ -340,6 +349,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Break Time",
             icon: breakTimeIcon,
+            key: "breakDuration",
             render: row =>
                 isEditing(row)
                     ?
@@ -367,6 +377,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Clock-in & out",
             icon: clockInIcon,
+            key: "timeEntries.0.clockIn",
             render: (row) =>
                 isEditing(row)
                     ?
@@ -395,21 +406,25 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Hours Worked",
             icon: hoursWorkedIcon,
+            key: "timeEntries.0.clockIn",
             render: row => <Typography variant="sm2">{formatDuration(row.hoursWorked)}</Typography>
         },
         {
             label: "Tardiness",
             icon: tardinessIcon,
+            key: "tardiness",
             render: row => <Typography variant="sm2">{formatDuration(row.tardiness) || "-"}</Typography>
         },
         {
             label: "Undertime",
             icon: tardinessIcon,
+            key: "undertime",
             render: row => <Typography variant="sm2">{formatDuration(row.undertime) || "-"}</Typography>
         },
         {
             label: "Hours on Break",
             icon: breakIcon,
+            key: "hoursOnBreak",
             render: row => <Typography variant="sm2">{formatDuration(row.hoursOnBreak) || "-"}</Typography>
         },
         {
@@ -423,6 +438,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Date",
             icon: dateIcon,
+            key: "date",
             render: row =>
                 isEditing(row)
                     ?
@@ -456,41 +472,32 @@ const EmployeeAttendanceDetail = () => {
                     <Typography variant="sm2">{row.date}</Typography>
         },
         {
-            label: "Overtime start & end",
-            icon: overtimeStartEndIcon,
+            label: "Overtime Hours",
+            icon: overtimeHoursIcon,
+            key: "overtimeHours",
             render: row =>
                 isEditing(row)
                     ?
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <TextField
-                            size="small"
-                            variant="outlined"
-                            sx={{ maxWidth: 100, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
-                            placeholder="Overtime Start"
-                            defaultValue={editedData.overtimeStart || ""}
-                            onBlur={(e) => handleValueChange("overtimeStart", e.target.value)}
-                        />
-                        <img src={lineIcon} alt="-" style={{ width: 100, height: 10 }} />
-                        <TextField
-                            size="small"
-                            variant="outlined"
-                            sx={{ maxWidth: 100, "& .MuiInputBase-input": { ...theme.typography.sm4 } }}
-                            placeholder="Overtime End"
-                            defaultValue={editedData.overtimeEnd || ""}
-                            onBlur={(e) => handleValueChange("overtimeEnd", e.target.value)}
-                        />
-                    </Box>
+                    <TextField
+                        type="number"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            maxWidth: 100,
+                            "& .MuiInputBase-input": { ...theme.typography.sm4 },
+                            "& input[type=number]": {
+                                MozAppearance: "textfield",
+                            },
+                            "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
+                                WebkitAppearance: "none",
+                                margin: 0,
+                            },
+                        }}
+                        defaultValue={editedData.overtimeHours || ""}
+                        onBlur={(e) => handleValueChange("overtimeHours", e.target.value, true)}
+                    />
                     :
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="sm2">{row.overtimeStart}</Typography>
-                        <img src={lineIcon} alt="-" style={{ width: 100, height: 10 }} />
-                        <Typography variant="sm2">{row.overtimeEnd || "-"}</Typography>
-                    </Box>
-        },
-        {
-            label: "Overtime Hours",
-            icon: overtimeHoursIcon,
-            render: row => <Typography variant="sm2">{formatDuration(row.overtimeHours)}</Typography>
+                    <Typography variant="sm2">{formatDuration(row.overtimeHours)}</Typography>
         },
         {
             label: "Actions",
@@ -503,11 +510,13 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Type",
             icon: typeIcon,
+            key: "timeOffType",
             render: row => <Typography variant="sm2">{timeOffTypes.find(t => t.key === row.timeOffType)?.label || row.timeOffType}</Typography>
         },
         {
             label: "Start Date",
             icon: startDateIcon,
+            key: "timeOffStartDate",
             render: row =>
                 isEditing(row)
                     ?
@@ -543,6 +552,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "End Date",
             icon: endDateIcon,
+            key: "timeOffEndDate",
             render: row =>
                 isEditing(row)
                     ?
@@ -578,6 +588,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Duration (Days)",
             icon: timeOffDurationIcon,
+            key: "timeOffDuration",
             render: row =>
                 isEditing(row)
                     ?
@@ -613,6 +624,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Date",
             icon: dateIcon,
+            key: "date",
             render: row =>
                 isEditing(row)
                     ?
@@ -648,6 +660,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Type",
             icon: typeIcon,
+            key: "earningsType",
             render: row =>
                 isEditing(row)
                     ?
@@ -672,6 +685,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Earnings (Hours)",
             icon: totalEarningsIcon,
+            key: "earningsTotal",
             render: row =>
                 isEditing(row)
                     ?
@@ -707,6 +721,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Date",
             icon: dateIcon,
+            key: "date",
             render: row =>
                 isEditing(row)
                     ?
@@ -742,6 +757,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Type",
             icon: typeIcon,
+            key: "deductionType",
             render: row =>
                 isEditing(row)
                     ?
@@ -766,6 +782,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Description",
             icon: descriptionIcon,
+            key: "deductionDescription",
             render: row =>
                 isEditing(row)
                     ?
@@ -786,6 +803,7 @@ const EmployeeAttendanceDetail = () => {
         {
             label: "Amount (AED)",
             icon: deductionAmountIcon,
+            key: "deductionAmount",
             render: row =>
                 isEditing(row)
                     ?
@@ -816,57 +834,6 @@ const EmployeeAttendanceDetail = () => {
             render: renderActions({ saveCallback: useSaveDeduction.submit, deleteCallback: useDeleteDeduction.submit })
         }
     ];
-
-    const HeaderCell = ({ icon, label }) => (
-        <TableCell sx={{ borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <img src={icon} alt={label} style={{ width: 24, height: 24 }} />
-                <Typography variant="md3">{label}</Typography>
-            </Box>
-        </TableCell>
-    );
-
-    const DataCell = ({ children }) => (
-        <TableCell sx={{ fontSize: "12px", borderRight: `1px solid ${theme.palette.custom.greyBorder}` }}>
-            {children}
-        </TableCell>
-    );
-
-    const DataTable = ({ columns, data, noDataMessage }) => (
-        <TableContainer sx={{ flexGrow: 1 }}>
-            <Table stickyHeader sx={{ width: "100%" }}>
-                <TableHead>
-                    <TableRow sx={{ backgroundColor: theme.palette.custom.darkerGrey }}>
-                        {columns.map((col, index) => (
-                            <HeaderCell key={index} icon={col.icon} label={col.label} />
-                        ))}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {
-                        data?.length
-                            ?
-                            data.map((row, rowIndex) => (
-                                <TableRow key={rowIndex}>
-                                    {columns.map((col, colIndex) => (
-                                        <DataCell key={colIndex}>
-                                            {col.render(row)}
-                                        </DataCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                            :
-                            <TableRow>
-                                <TableCell colSpan={columns.length}>
-                                    <Typography>{noDataMessage}</Typography>
-                                </TableCell>
-                            </TableRow>
-                    }
-                </TableBody>
-            </Table>
-            {ConfirmDialog}
-        </TableContainer>
-    );
 
     const ConfirmDialog = (
         <Dialog open={openDialog} onClose={handleCancelDelete}>
@@ -1097,19 +1064,19 @@ const EmployeeAttendanceDetail = () => {
                     }}
                 >
                     {activeTab === 0 && (
-                        <DataTable columns={attendanceColumns} data={attendance} noDataMessage="No attendance records available." />
+                        <SortableDataTable columns={attendanceColumns} data={attendance} noDataMessage="No attendance records available." theme={theme} />
                     )}
                     {activeTab === 1 && (
-                        <DataTable columns={overtimeColumns} data={overtime} noDataMessage="No overtime records." />
+                        <SortableDataTable columns={overtimeColumns} data={overtime} noDataMessage="No overtime records." theme={theme} />
                     )}
                     {activeTab === 2 && (
-                        <DataTable columns={timeOffColumns} data={timeOff} noDataMessage="No time off records." />
+                        <SortableDataTable columns={timeOffColumns} data={timeOff} noDataMessage="No time off records." theme={theme} />
                     )}
                     {activeTab === 3 && (
-                        <DataTable columns={additionalEarningsColumns} data={additionalEarnings} noDataMessage="No additional earnings records." />
+                        <SortableDataTable columns={additionalEarningsColumns} data={additionalEarnings} noDataMessage="No additional earnings records." theme={theme} />
                     )}
                     {activeTab === 4 && (
-                        <DataTable columns={deductionsColumns} data={deductions} noDataMessage="No additional deduction records." />
+                        <SortableDataTable columns={deductionsColumns} data={deductions} noDataMessage="No additional deduction records." theme={theme} />
                     )}
                 </Box>
             </Paper>
@@ -1145,6 +1112,8 @@ const EmployeeAttendanceDetail = () => {
                 documentId={documentId}
                 showSnackbar={showSnackbar}
             />
+
+            {ConfirmDialog}
 
             {/* Snackbar for notifications */}
             <Snackbar
