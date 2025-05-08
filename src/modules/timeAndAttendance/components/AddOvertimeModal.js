@@ -14,7 +14,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import LoadingOverlay from "../../shared/components/LoadingOverlay";
 import dateIcon from "../../shared/assets/icon/attendance-tab-date-icon.png";
-import overtimeStartEndIcon from "../../shared/assets/icon/attendance-overtime-start-date-icon.png";
+import overtimeHoursIcon from "../../shared/assets/icon/attendance-overtime-start-date-icon.png";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import DatePicker from "react-datepicker";
@@ -27,16 +27,14 @@ import { addEmployeeOvertime } from "../services/TimeAndAttendanceAPI";
 const AddOvertimeModal = ({ open, onClose, documentId, onOvertimeAdded, showSnackbar }) => {
   const theme = useTheme();
   const [date, setDate] = useState(null);
-  const [overtimeStart, setOvertimeStart] = useState("");
-  const [overtimeEnd, setOvertimeEnd] = useState("");
+  const [overtimeHours, setOvertimeHours] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "warning" });
 
   const { submit, loading, error } = useSubmit(addEmployeeOvertime);
 
   const resetForm = () => {
     setDate(null);
-    setOvertimeStart("");
-    setOvertimeEnd("");
+    setOvertimeHours("");
     setSnackbar({ open: false, message: "", severity: "warning" });
   };
 
@@ -46,15 +44,14 @@ const AddOvertimeModal = ({ open, onClose, documentId, onOvertimeAdded, showSnac
   };
 
   const handleSubmit = async () => {
-    if (!date || !overtimeStart || !overtimeEnd) {
+    if (!date || !overtimeHours) {
       return setSnackbar({ open: true, message: "Please fill in all fields.", severity: "error" });
     }
 
     const payload = {
       id: documentId,
       date: format(date, "dd-MM-yyyy"),
-      overtimeStart,
-      overtimeEnd,
+      overtimeHours
     };
 
     try {
@@ -143,50 +140,27 @@ const AddOvertimeModal = ({ open, onClose, documentId, onOvertimeAdded, showSnac
           />
         </Box>
 
-        {/* Start and End Time Fields */}
         <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
           <TextField
-            label="Overtime Start"
-            type="time"
+            label="Overtime Hours"
+            type="number"
             fullWidth
-            value={overtimeStart}
-            onChange={(e) => setOvertimeStart(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            InputProps={{
-              endAdornment: (
-                <img src={overtimeStartEndIcon} alt="Overtime Start" style={{ width: 20, height: 20 }} />
-              ),
-            }}
+            value={overtimeHours}
+            onChange={(e) => setOvertimeHours(e.target.value)}
             sx={{
               ...textFieldStyles,
-              "& .MuiInputBase-input": {
-                "&::-webkit-calendar-picker-indicator, &::-webkit-clear-button, &::-webkit-inner-spin-button": {
-                  display: "none"
-                }
-              }
+              "& input[type=number]": {
+                MozAppearance: "textfield",
+              },
+              "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
+                WebkitAppearance: "none",
+                margin: 0,
+              },
             }}
-          />
-        </Box>
-        <Box sx={{ display: "flex", flexDirection: "column", mb: 1 }}>
-          <TextField
-            label="Overtime End"
-            type="time"
-            fullWidth
-            value={overtimeEnd}
-            onChange={(e) => setOvertimeEnd(e.target.value)}
-            InputLabelProps={{ shrink: true }}
             InputProps={{
               endAdornment: (
-                <img src={overtimeStartEndIcon} alt="Overtime End" style={{ width: 20, height: 20 }} />
+                <img src={overtimeHoursIcon} alt="Overtime Hours" style={{ width: 20, height: 20 }} />
               ),
-            }}
-            sx={{
-              ...textFieldStyles,
-              "& .MuiInputBase-input": {
-                "&::-webkit-calendar-picker-indicator, &::-webkit-clear-button, &::-webkit-inner-spin-button": {
-                  display: "none"
-                }
-              }
             }}
           />
         </Box>
