@@ -1,7 +1,7 @@
 import React from 'react';
 import { ThemeProvider} from '@mui/material';
 import theme from './modules/shared/theme';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 
 
 import EmployeeListPage from "./modules/employee/pages/EmployeeListPage";
@@ -21,7 +21,7 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider theme={theme}>
-      <BrowserRouter>
+      <HashRouter>
         <div>
           <Routes>
             <Route path='/login' element={<LoginPage/>}/>
@@ -37,7 +37,7 @@ function App() {
             <Route path="/portal" element={<PrivateRoute element={<AppPortalPage />} />}/>
           </Routes>
         </div>
-      </BrowserRouter>
+      </HashRouter>
     </ThemeProvider>
     </AuthProvider>
   );
