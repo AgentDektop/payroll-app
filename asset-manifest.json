@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/payroll-app/static/css/main.580a9c88.css",
-    "main.js": "/payroll-app/static/js/main.51c20911.js",
+    "main.js": "/payroll-app/static/js/main.61368315.js",
     "static/media/panadero-bg-3.png": "/payroll-app/static/media/panadero-bg-3.4853c8ebacb6f6de3a92.png",
     "static/media/brand-icon.png": "/payroll-app/static/media/brand-icon.79d79ac508be6313156f.png",
     "static/media/website-icon.png": "/payroll-app/static/media/website-icon.157a5c8144649ab6ab1f.png",
@@ -12,10 +12,10 @@
     "static/media/employee-icon.png": "/payroll-app/static/media/employee-icon.08acd82315d10a4c4c9d.png",
     "index.html": "/payroll-app/index.html",
     "main.580a9c88.css.map": "/payroll-app/static/css/main.580a9c88.css.map",
-    "main.51c20911.js.map": "/payroll-app/static/js/main.51c20911.js.map"
+    "main.61368315.js.map": "/payroll-app/static/js/main.61368315.js.map"
   },
   "entrypoints": [
     "static/css/main.580a9c88.css",
-    "static/js/main.51c20911.js"
+    "static/js/main.61368315.js"
   ]
 }
