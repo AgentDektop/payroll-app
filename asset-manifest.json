@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/payroll-app/static/css/main.580a9c88.css",
+    "main.js": "/payroll-app/static/js/main.51c20911.js",
+    "static/media/panadero-bg-3.png": "/payroll-app/static/media/panadero-bg-3.4853c8ebacb6f6de3a92.png",
+    "static/media/brand-icon.png": "/payroll-app/static/media/brand-icon.79d79ac508be6313156f.png",
+    "static/media/website-icon.png": "/payroll-app/static/media/website-icon.157a5c8144649ab6ab1f.png",
+    "static/media/payroll-icon.png": "/payroll-app/static/media/payroll-icon.08f33a588a0452cac9e1.png",
+    "static/media/biometrics-icon.png": "/payroll-app/static/media/biometrics-icon.a82128c2600ee1f60a11.png",
+    "static/media/panadero-icon.png": "/payroll-app/static/media/panadero-icon.5384510cdfb9f0151995.png",
+    "static/media/pos-icon.png": "/payroll-app/static/media/pos-icon.f06f5260d0b9f946a7bf.png",
+    "static/media/employee-icon.png": "/payroll-app/static/media/employee-icon.08acd82315d10a4c4c9d.png",
+    "index.html": "/payroll-app/index.html",
+    "main.580a9c88.css.map": "/payroll-app/static/css/main.580a9c88.css.map",
+    "main.51c20911.js.map": "/payroll-app/static/js/main.51c20911.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.580a9c88.css",
+    "static/js/main.51c20911.js"
+  ]
+}
