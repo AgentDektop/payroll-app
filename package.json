@@ -1,7 +1,7 @@
 {
   "name": "payroll-app",
   "version": "0.1.0",
-  "homepage": "https://agentdektop.github.io/payroll-app",
+  "homepage": "https://panaderopastryshop.github.io/payroll-app",
   "private": true,
   "dependencies": {
     "@date-io/date-fns": "^3.2.0",
